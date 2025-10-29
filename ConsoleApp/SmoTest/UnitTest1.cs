@@ -16,9 +16,12 @@ public class Tests
             .Select(line =>
             {
                 string[] r = line.Split(',');
+                //Iris-setosa
+                //Iris-versicolor
+                //Iris-virginica
                 var input = r[1..^1].Select(x=>Convert.ToDouble(x));
                 var label = r[^1];
-                var returnLabel = label == "Iris-setosa" ? 1.0 : -1.0;
+                var returnLabel = label == "Iris-virginica" ? 1.0 : -1.0;
                 return (input, returnLabel);
             }); // Transform each line into an array of values
 //.ToList();  // Materialize the results if needed
@@ -46,8 +49,34 @@ public class Tests
     [Test]
     public void Test2()
     {
-        Smo smo = new Smo(input, labels, KernelType.Linear);
+        var length = (int)(input.Length * 0.7);
+        Random r = new Random();
+        var svmNumbers = this.svmNumbers.ToArray();
+        
+        r.Shuffle(svmNumbers);
+        
+        Smo smo = new Smo(svmNumbers.Take(length).Select(x=>x.XDataPoints.ToArray()).ToArray(), svmNumbers.Take(length).Select(x=>x.YLabel).ToArray(), KernelType.Linear);
         smo.Fit();
+        int correct = 0;
+        int total = 0;
+        foreach (var v in svmNumbers.Skip(length))
+        {
+            var aaa = smo._svmOptimizer.Predict(v);
+            var label = aaa > 0;
+
+            var trueLabel = v.YLabel > 0;
+
+            if (trueLabel == label)
+            {
+                correct++;
+            }
+
+            total++;
+        }
+
+        double res = (double)correct / total;
+        Console.WriteLine(res);
+        
     }
     
     [Test]
