@@ -199,7 +199,7 @@ public class SvmOptimizer
 
     public double NewAlpha2(SvmNumber number, double e1, double e2, double eta, double H, double L)
     {
-        double alpha2new = (number.Alpha + number.YLabel * (e1 - e2)) / eta;
+        double alpha2new = number.Alpha + number.YLabel * (e1 - e2) / eta;
         alpha2new = Math.Min(alpha2new, H);
         return Math.Max(alpha2new, L);
     }
