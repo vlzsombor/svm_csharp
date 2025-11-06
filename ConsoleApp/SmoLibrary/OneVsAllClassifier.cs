@@ -6,12 +6,17 @@ public class OneVsAllClassifier
     {
         List<string> labels = result.GroupBy(x => x.label).Select(x => x.Key).Distinct().ToList();
         Dictionary<string, List<SvmNumber>> list = [];
+        int i = 0;
         foreach ((IEnumerable<double> input, string label) r in result)
+        {
             labels.ForEach(x =>
             {
                 list.TryAdd(x, new List<SvmNumber>());
-                list[x].Add(new SvmNumber(r.input, r.label == x ? 1 : -1, 0, true));
+                list[x].Add(new SvmNumber(i, r.input, r.label == x ? 1 : -1, 0));
             });
+
+            i++;
+        }
 
         foreach (KeyValuePair<string, List<SvmNumber>> e in list) Smos.Add(e.Key, new SvmOptimizer(e.Value));
     }

@@ -32,10 +32,10 @@ public class Tests
 
         int i = 0;
         svmNumbers = result.Select(r => new SvmNumber(
+            i++,
             r.input,
             r.returnLabel,
-            0.0,
-            true));
+            0.0));
     }
 
     [Test]
@@ -77,7 +77,7 @@ public class Tests
     [Test]
     public async Task Iris()
     {
-        double split = 0.7;
+        double split = 1;
         
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = "archive/Iris.csv"; //await KaggleDownload("uciml", dataName);

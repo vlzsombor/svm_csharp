@@ -10,7 +10,7 @@ public record SvmConfig(double C, double KktThr, KernelType KernelType)
 {
     public static SvmConfig GetDefault()
     {
-        return new SvmConfig(1.0, 0.01, KernelType.Linear);
+        return new SvmConfig(1.0, 0.001, KernelType.Linear);
     }
 }
 
@@ -27,12 +27,32 @@ public class SvmOptimizer
         _dataPoints = dataPoints;
     }
 
-    public double[] W { get; set; }
+    public double[] W => WCalculation();
     public double B { get; set; }
+
+    public double[] WCalculation()
+    {
+        int featureCount = _dataPoints.First().XDataPoints.Count();
+        double[] w = new double[featureCount]; // Initialize to zeros
+
+        foreach (SvmNumber i in _dataPoints.Where(x => x.Alpha != 0))
+        {
+            double scale = i.Alpha * i.YLabel;
+            double[] trainingPoints = i.XDataPoints.ToArray();
+            for (int j = 0; j < featureCount; j++) w[j] += scale * trainingPoints[j];
+        }
+
+        return w;
+    }
 
     public void Fit()
     {
         int i = 0;
+
+//        var errorCache = _dataPoints.Select(Error).ToArray();
+
+        //error_cache = self.predict(x_train)[1] - y_train  # auxilary array for heuristics
+        _dataPoints.ToList().ForEach(x => x.ErrorCache = Error(x));
         while (i < MAX_ITER)
         {
             SvmNumber? heuristic2 = Heuristic2();
@@ -50,46 +70,61 @@ public class SvmOptimizer
 
             if (eta == 0) continue;
 
-            double e1 = Error(heuristic1);
-            double e2 = Error(heuristic2);
+//            double e1 = Error(heuristic1);
+            //           double e2 = Error(heuristic2);
+
+
+            var e1 = Error(heuristic1);
+            var e2 = Error(heuristic2);
 
             double alpha2new = NewAlpha2(heuristic2, e1, e2, eta, H, L);
 
             double alpha1new = NewAlpha1(heuristic1, heuristic2, alpha2new);
 
-            B = CalculateB(heuristic1, heuristic2, alpha1new, alpha2new);
+            B = CalculateB(heuristic1, heuristic2, alpha1new, alpha2new, e1, e2);
 
-            heuristic2.Alpha = alpha2new;
             heuristic1.Alpha = alpha1new;
+            heuristic2.Alpha = alpha2new;
+            heuristic1.ErrorCache = Error(heuristic1);
+            heuristic2.ErrorCache = Error(heuristic2);
+
+
+            Logger.Log(i.ToString());
+            Logger.Log("\t W " + string.Join(" ", W));
+            Logger.Log("\t B " + B);
+            var ec = _dataPoints.Select(x => x.ErrorCache).ToArray();
             i++;
         }
 
         List<SvmNumber> res = _dataPoints.Where(x => x.Alpha is > 0 and < 1).ToList();
     }
 
-    public SvmNumber Heuristic1(SvmNumber? alpha1 = null)
+    public SvmNumber Heuristic1(SvmNumber alpha1)
     {
         //alpha1 ??= Heuristic2();
         IEnumerable<SvmNumber> nonBound = NonBoundExamples();
 
-        double alphaError = Error(alpha1);
+        double alphaError = alpha1.ErrorCache;
         if (nonBound.Any())
         {
             if (alphaError >= 0)
                 return nonBound
-                    .OrderBy(Error)
+                    .OrderBy(x => x.ErrorCache)
+                    //.ThenByDescending(x=>x.i)
                     .First();
 
             return nonBound
-                .OrderByDescending(Error)
+                .OrderByDescending(x => x.ErrorCache)
+                //.ThenByDescending(x=>x.i)
                 .First();
         }
 
 
-        List<double> errorCache = _dataPoints.Select(Error).ToList();
-        IEnumerable<double> values = _dataPoints.Select(x => Math.Abs(Error(x) - alphaError));
+//        List<double> errorCache = _dataPoints.Select(Error).ToList();
+//        IEnumerable<double> values = _dataPoints.Select(x => Math.Abs(Error(x) - alphaError));
         return _dataPoints
-            .OrderByDescending(x => Math.Abs(Error(x) - alphaError))
+            .OrderByDescending(x => Math.Abs(x.ErrorCache - alphaError))
+            //.ThenByDescending(x=>x.i)
             .First();
     }
 
@@ -116,10 +151,17 @@ public class SvmOptimizer
 
     public SvmNumber? Heuristic2()
     {
-        foreach (SvmNumber dp in _dataPoints.Where(x => !x.Optimized))
+        var list = _dataPoints.Where(x => !x.Optimized);
+
+        foreach (SvmNumber dp in list)
         {
             dp.Optimized = true;
-            if (!Check_KKT(dp)) return dp;
+            if (!Check_KKT(dp))
+            {
+                
+                var c = list.Count();
+                return dp;
+            }
         }
 
 //        //var firstOrDefault = _dataPoints.FirstOrDefault(x => !x.Optimized && !Check_KKT(x) );
@@ -147,8 +189,6 @@ public class SvmOptimizer
 
     public double Error(SvmNumber svmNumber)
     {
-        double aa = Predict(svmNumber) - svmNumber.YLabel;
-
         return Predict(svmNumber) - svmNumber.YLabel;
     }
 
@@ -161,15 +201,15 @@ public class SvmOptimizer
     {
         double alpha2new = (number.Alpha + number.YLabel * (e1 - e2)) / eta;
         alpha2new = Math.Min(alpha2new, H);
-        return alpha2new = Math.Max(alpha2new, L);
+        return Math.Max(alpha2new, L);
     }
 
     public bool Check_KKT(SvmNumber svmNumber)
     {
         double score = Predict(svmNumber);
         double ro = svmNumber.YLabel * score - 1;
-        bool cond1 = (svmNumber.Alpha < _svmConfig.C) & (ro < -_svmConfig.KktThr);
-        bool cond2 = (svmNumber.Alpha > 0) & (ro > _svmConfig.KktThr);
+        bool cond1 = (svmNumber.Alpha < _svmConfig.C) && (ro < -_svmConfig.KktThr);
+        bool cond2 = (svmNumber.Alpha > 0) && (ro > _svmConfig.KktThr);
         return !(cond1 || cond2);
     }
 
@@ -210,12 +250,14 @@ public class SvmOptimizer
         return Math.Exp(-gamma * squaredDistance);
     }
 
-    public double CalculateB(SvmNumber s1, SvmNumber s2, double alphaNew1, double alphaNew2)
+    public double CalculateB(SvmNumber s1, SvmNumber s2, double alphaNew1, double alphaNew2, double e1, double e2)
     {
-        double b1 = B - Error(s1) - s1.YLabel * (alphaNew1 - s1.Alpha) * LinearKernel(s1.XDataPoints, s1.XDataPoints)
+        double b1 = B - e1 -
+                    s1.YLabel * (alphaNew1 - s1.Alpha) * LinearKernel(s1.XDataPoints, s1.XDataPoints)
                     - s2.YLabel * (alphaNew2 - s2.Alpha) * LinearKernel(s1.XDataPoints, s2.XDataPoints);
 
-        double b2 = B - Error(s2) - s1.YLabel * (alphaNew1 - s1.Alpha) * LinearKernel(s1.XDataPoints, s2.XDataPoints)
+        double b2 = B - e2 -
+                    s1.YLabel * (alphaNew1 - s1.Alpha) * LinearKernel(s1.XDataPoints, s2.XDataPoints)
                     - s2.YLabel * (alphaNew2 - s2.Alpha) * LinearKernel(s2.XDataPoints, s2.XDataPoints);
 
         if (0 < alphaNew1 && alphaNew1 < _svmConfig.C) return b1;
@@ -226,8 +268,10 @@ public class SvmOptimizer
     }
 }
 
-public record SvmNumber(IEnumerable<double> XDataPoints, double YLabel, double Alpha, bool SupportVector)
+public record SvmNumber(int i, IEnumerable<double> XDataPoints, double YLabel, double Alpha)
 {
+    
     public double Alpha { get; set; } = Alpha;
     public bool Optimized { get; set; }
+    public double ErrorCache { get; set; }
 }
