@@ -10,7 +10,7 @@ public record SvmConfig(double C, double KktThr, KernelType KernelType)
 {
     public static SvmConfig GetDefault()
     {
-        return new SvmConfig(1.0f, 0.001f, KernelType.Linear);
+        return new SvmConfig(1.0f, 0.001, KernelType.Linear);
     }
 }
 
@@ -90,9 +90,9 @@ public class SvmOptimizer
             heuristic2.ErrorCache = Error(heuristic2);
 
 
-            Logger.Log(i.ToString());
-            Logger.Log("\t W " + string.Join(" ", W));
-            Logger.Log("\t B " + B);
+//            Logger.Log(i.ToString());
+//            Logger.Log("\t W " + string.Join(" ", W));
+//            Logger.Log("\t B " + B);
             var ec = _dataPoints.Select(x => x.ErrorCache).ToArray();
         }
 
@@ -234,7 +234,7 @@ public class SvmOptimizer
 
     public static double LinearKernel(IEnumerable<double> xj, IEnumerable<double> x)
     {
-        //return RbfKernel(xj.ToArray(), x.ToArray(), 0.5);
+        return RbfKernel(xj.ToArray(), x.ToArray(), 1);
         return xj.InnerProduct(x);
     }
 

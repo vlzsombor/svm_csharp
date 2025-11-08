@@ -77,21 +77,36 @@ public class Tests
     [Test]
     public async Task Iris()
     {
-        float split = 1;
-        
+        double split = 0.8;
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = "archive/Iris.csv"; //await KaggleDownload("uciml", dataName);
+        List<double> results = [];
+        for (int i = 0; i < 1; i++)
+        {
+            var r= Static.DoLogic(fileName, split, line =>
+            {
+                string[] r = line.Split(',');
+                //Iris-setosa
+                //Iris-versicolor
+                //Iris-virginica
+                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                //double[] filteredInput = new[] { input[0], input[2] };
+                string label = r[^1];
+                return (input, label);
+            });
+            results.Add(r);
+            
+        }
+
+        Console.WriteLine("average" + results.Average());
 
 
-        Static.DoLogic(fileName, split);
-        
-        
     }
     [Test]
     public async Task Test3()
     {
         float split = 0.7f;
-        
+
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = await KaggleDownload("uciml", dataName);
         for (int i = 0; i < 1; i++)
@@ -113,7 +128,7 @@ public class Tests
 
             Random r = new();
             r.Shuffle(result);
-            
+
             int length = (int)(result.Length * split);
             List<(IEnumerable<float> filteredInput, string label)> train = result.Take(length).ToList();
             List<(IEnumerable<float> filteredInput, string label)> test = result.Skip(length).ToList();
@@ -134,7 +149,15 @@ public class Tests
     {
         string dataName = "wine-quality-dataset";
         var fileName = await Static.KaggleDownload("yasserh", dataName);
-        var result = Static.DoLogic(fileName, 0.7f);
+        var result = Static.DoLogic(fileName, 0.7f, s =>
+        {
+            var split = s.Split(',');
+
+            var train = split[0..10].Select(Convert.ToDouble);
+            var label = split[10];
+
+            return (train.ToArray(), label);
+        } );
 
     }
     [Test]
@@ -142,14 +165,13 @@ public class Tests
     {
         string dataName = "thyroid-disease-data-set";
         var fileName = await Static.KaggleDownload("yasserhessein", dataName);
-        var result = Static.DoLogic(fileName, 0.1f);
+        //var result = Static.DoLogic(fileName, 0.1f);
 
-    } 
+    }
 
     public async Task<string> KaggleDownload(string username, string dataName)
     {
         if (File.Exists(Path.Combine(dataName, dataName + ".csv"))) return Path.Combine(dataName, dataName + ".csv");
-        ;
 
         using HttpClient httpClient = new();
 //        httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer YOUR_KAGGLE_KEY");

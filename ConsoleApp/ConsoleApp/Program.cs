@@ -17,7 +17,7 @@ if (splitString is not null)
 
 string dataName = "thyroid-disease-data-set";
 var fileName = await Static.KaggleDownload("yasserhessein", dataName);
-var result = Static.DoLogic(fileName, 0.7f);
+//var result = Static.DoLogic(fileName, 0.7f);
 
 /*string dataName = "breast-cancer-wisconsin-data";
 var fileName = await Static.KaggleDownload("uciml", dataName);

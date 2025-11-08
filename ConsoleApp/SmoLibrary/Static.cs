@@ -17,43 +17,36 @@ public static class Static
     }
 
 
-    public static double DoLogic(string fileName, double split)
+    public static double DoLogic(string fileName, double split, Func<string, (double[], string label)> func)
     {
-        IEnumerable<string> lines = File.ReadLines(fileName); // Lazily read lines
+        IEnumerable<string> lines = File.ReadLines("archive/train.csv"); // Lazily read lines
+        IEnumerable<string> lines2 = File.ReadLines("archive/test.csv"); // Lazily read lines
         (double[] filteredInput, string label)[] result = lines.Skip(1)
-            .Select(line =>
-            {
-                string[] r = line.Split(',');
-                //Iris-setosa
-                //Iris-versicolor
-                //Iris-virginica
-                double[] input = r[1..^1].Select(Convert.ToDouble).ToArray();
-                double[] filteredInput = new[] { input[0], input[2] };
-                string label = r[^1];
-                return (filteredInput, label);
-            }).ToArray();
-
+            .Select(func).ToArray();
+        (double[] filteredInput, string label)[] result2 = lines2.Skip(1)
+            .Select(func).ToArray();
+        
         Random r = new();
         var sampleBeing = 0;
         var sampleSize = 150;
-        
-        result = result.Skip(sampleBeing).Take(sampleSize).ToArray();
-        //r.Shuffle(result);
+
+        result = result.ToArray();
+//        r.Shuffle(result);
 
         int length = (int)(result.Length * split);
-        IEnumerable<(double[] filteredInput, string label)> train = result.Take(length);
-        List<(double[] filteredInput, string label)> test = result.Skip(length).ToList();
+        IEnumerable<(double[] filteredInput, string label)> train = result;//.Take(length);
+        List<(double[] filteredInput, string label)> test = result2.ToList();//.Skip(length).ToList();
         OneVsAllClassifier oneVsAllClassifier = new(train);
 
         oneVsAllClassifier.fit();
         int correctCount = test.Count(x => oneVsAllClassifier.Predict(x.filteredInput) == x.label);
         double finalR = (double)correctCount / test.Count;
         File.WriteAllText($"result_{r.Next()}_{DateTime.Now.Minute}", $"Result %: {finalR}");
-        Console.WriteLine(finalR);
+        Console.WriteLine("correct: " + finalR);
         foreach (KeyValuePair<string, SvmOptimizer> VARIABLE in oneVsAllClassifier.Smos)
         {
-            Console.WriteLine(VARIABLE.Key);
-            Console.WriteLine(string.Join(" ", VARIABLE.Value.W.Select(x => x.ToString(CultureInfo.InvariantCulture))));
+//            Console.WriteLine(VARIABLE.Key);
+//            Console.WriteLine(string.Join(" ", VARIABLE.Value.W.Select(x => x.ToString(CultureInfo.InvariantCulture))));
             Console.WriteLine(VARIABLE.Value.B);
             Console.WriteLine();
         }
