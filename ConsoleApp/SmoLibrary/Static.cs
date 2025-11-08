@@ -37,7 +37,7 @@ public static class Static
         var sampleBeing = 45;
         var sampleSize = 10;
         
-        result = result.Where(x => x.label is "Iris-setosa" or "Iris-versicolor").Skip(sampleBeing).Take(10).ToArray();
+        result = result.Where(x => x.label is "Iris-setosa" or "Iris-versicolor").Skip(sampleBeing).Take(sampleSize).ToArray();
         //r.Shuffle(result);
 
         int length = (int)(result.Length * split);

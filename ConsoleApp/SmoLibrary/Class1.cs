@@ -55,6 +55,7 @@ public class SvmOptimizer
         _dataPoints.ToList().ForEach(x => x.ErrorCache = Error(x));
         while (i < MAX_ITER)
         {
+            i++;
             SvmNumber? heuristic2 = Heuristic2();
 
             if (heuristic2 is null) break;
@@ -93,7 +94,6 @@ public class SvmOptimizer
             Logger.Log("\t W " + string.Join(" ", W));
             Logger.Log("\t B " + B);
             var ec = _dataPoints.Select(x => x.ErrorCache).ToArray();
-            i++;
         }
 
         List<SvmNumber> res = _dataPoints.Where(x => x.Alpha is > 0 and < 1).ToList();
@@ -175,7 +175,7 @@ public class SvmOptimizer
         foreach (SvmNumber dp in _dataPoints.Where(x => !x.Optimized))
         {
             dp.Optimized = true;
-            if (Check_KKT(dp)) return dp;
+            if (!Check_KKT(dp)) return dp;
         }
 
         return null;
