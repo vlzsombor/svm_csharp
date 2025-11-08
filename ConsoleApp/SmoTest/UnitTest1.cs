@@ -13,7 +13,7 @@ public class Tests
     public void Setup()
     {
         IEnumerable<string> lines = File.ReadLines("archive/Iris.csv"); // Lazily read lines
-        IEnumerable<(IEnumerable<double> input, double returnLabel)> result = lines.Skip(1)
+        var result = lines.Skip(1)
             .Select(line =>
             {
                 string[] r = line.Split(',');
@@ -22,7 +22,7 @@ public class Tests
                 //Iris-virginica
                 IEnumerable<double> input = r[1..^1].Select(x => Convert.ToDouble(x));
                 string label = r[^1];
-                double returnLabel = label == "Iris-virginica" ? 1.0 : -1.0;
+                double returnLabel = label == "Iris-virginica" ? 1.0f : -1.0f;
                 return (input, returnLabel);
             }); // Transform each line into an array of values
 //.ToList();  // Materialize the results if needed
@@ -35,7 +35,7 @@ public class Tests
             i++,
             r.input,
             r.returnLabel,
-            0.0));
+            0.0f));
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class Tests
         int total = 0;
         foreach (SvmNumber v in svmNumbers.Skip(length))
         {
-            double aaa = SvmOptimizer.Predict(v);
+            var aaa = SvmOptimizer.Predict(v);
             bool label = aaa > 0;
 
             bool trueLabel = v.YLabel > 0;
@@ -71,13 +71,13 @@ public class Tests
             total++;
         }
 
-        double res = (double)correct / total;
+        float res = (float)correct / total;
         Console.WriteLine(res);
     }
     [Test]
     public async Task Iris()
     {
-        double split = 1;
+        float split = 1;
         
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = "archive/Iris.csv"; //await KaggleDownload("uciml", dataName);
@@ -90,7 +90,7 @@ public class Tests
     [Test]
     public async Task Test3()
     {
-        double split = 0.7;
+        float split = 0.7f;
         
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = await KaggleDownload("uciml", dataName);
@@ -98,14 +98,14 @@ public class Tests
         {
 
             IEnumerable<string> lines = File.ReadLines(fileName); // Lazily read lines
-            (IEnumerable<double> input, string label)[] result = lines.Skip(1)
+            (IEnumerable<float> input, string label)[] result = lines.Skip(1)
                 .Select(line =>
                 {
                     string[] r = line.Split(',');
                     //Iris-setosa
                     //Iris-versicolor
                     //Iris-virginica
-                    IEnumerable<double> input = r[2..].Select(x => Convert.ToDouble(x));
+                    IEnumerable<float> input = r[2..].Select(x => Convert.ToSingle(x));
                     var filteredInput = input;
                     string label = r[1];
                     return (filteredInput, label);
@@ -115,14 +115,14 @@ public class Tests
             r.Shuffle(result);
             
             int length = (int)(result.Length * split);
-            List<(IEnumerable<double> filteredInput, string label)> train = result.Take(length).ToList();
-            List<(IEnumerable<double> filteredInput, string label)> test = result.Skip(length).ToList();
+            List<(IEnumerable<float> filteredInput, string label)> train = result.Take(length).ToList();
+            List<(IEnumerable<float> filteredInput, string label)> test = result.Skip(length).ToList();
             //OneVsAllClassifier oneVsAllClassifier = new(train);
 
 //            oneVsAllClassifier.fit();
 
 //            int correctCount = test.Count(x => oneVsAllClassifier.Predict(x.input) == x.label);
-//            Console.WriteLine((double)correctCount / test.Count);
+//            Console.WriteLine((float)correctCount / test.Count);
 
 //        oneVsAllClassifier.Predict(test.Select(x=>x.input)).Select();
         }
@@ -134,7 +134,7 @@ public class Tests
     {
         string dataName = "wine-quality-dataset";
         var fileName = await Static.KaggleDownload("yasserh", dataName);
-        var result = Static.DoLogic(fileName, 0.7);
+        var result = Static.DoLogic(fileName, 0.7f);
 
     }
     [Test]
@@ -142,7 +142,7 @@ public class Tests
     {
         string dataName = "thyroid-disease-data-set";
         var fileName = await Static.KaggleDownload("yasserhessein", dataName);
-        var result = Static.DoLogic(fileName, 0.1);
+        var result = Static.DoLogic(fileName, 0.1f);
 
     } 
 

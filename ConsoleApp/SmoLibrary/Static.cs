@@ -34,10 +34,10 @@ public static class Static
             }).ToArray();
 
         Random r = new();
-        var sampleBeing = 45;
-        var sampleSize = 10;
+        var sampleBeing = 0;
+        var sampleSize = 150;
         
-        result = result.Where(x => x.label is "Iris-setosa" or "Iris-versicolor").Skip(sampleBeing).Take(sampleSize).ToArray();
+        result = result.Skip(sampleBeing).Take(sampleSize).ToArray();
         //r.Shuffle(result);
 
         int length = (int)(result.Length * split);

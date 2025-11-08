@@ -10,7 +10,7 @@ public record SvmConfig(double C, double KktThr, KernelType KernelType)
 {
     public static SvmConfig GetDefault()
     {
-        return new SvmConfig(1.0, 0.001, KernelType.Linear);
+        return new SvmConfig(1.0f, 0.001f, KernelType.Linear);
     }
 }
 
@@ -240,14 +240,14 @@ public class SvmOptimizer
 
     public static double RbfKernel(double[] x1, double[] x2, double gamma)
     {
-        double squaredDistance = 0.0;
+        double squaredDistance = 0.0f;
         for (int i = 0; i < x1.Length; i++)
         {
             double diff = x1[i] - x2[i];
             squaredDistance += diff * diff;
         }
 
-        return Math.Exp(-gamma * squaredDistance);
+        return (double)Math.Exp(-gamma * squaredDistance);
     }
 
     public double CalculateB(SvmNumber s1, SvmNumber s2, double alphaNew1, double alphaNew2, double e1, double e2)
