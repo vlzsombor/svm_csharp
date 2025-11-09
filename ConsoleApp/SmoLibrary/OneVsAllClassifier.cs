@@ -21,17 +21,34 @@ public class OneVsAllClassifier
         foreach (KeyValuePair<string, List<SvmNumber>> e in list) Smos.Add(e.Key, new SvmOptimizer(e.Value));
     }
 
+    public OneVsAllClassifier()
+    {
+        
+    }
+
     public Dictionary<string, SvmOptimizer> Smos { get; set; } = [];
 
     public void fit()
     {
-        foreach (KeyValuePair<string, SvmOptimizer> smo in Smos) smo.Value.Fit();
+        Smos.First(x=>x.Key == "1").Value.Fit();
+        return;
+        Parallel.ForEach(Smos, item =>
+        { 
+            Logger.Log("started: ");
+            item.Value.Fit();
+        });
     }
 
     public string Predict(IEnumerable<double> doubles)
     {
+        var r = Smos.First(x => x.Key == "1").Value.Predict2(doubles);
 
-        
+        if (r > 0)
+        {
+            return "1";
+        }
+
+        return "-1";
         return Smos.OrderByDescending(x => x.Value.Predict(doubles)).First().Key;
     }
 

@@ -8,6 +8,14 @@ using KernelType = SVM.KernelType;
 
 //SVM.SimplifiedSMO simplifiedSmo = new SimplifiedSMO();
 
+Digits digits = new();
+//digits.Main();
+await digits.MainLoad();
+
+
+
+return;
+
 var splitString = args.FirstOrDefault();
 double split = 0.8;
 if (splitString is not null)

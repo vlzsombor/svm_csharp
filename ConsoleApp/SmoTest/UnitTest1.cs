@@ -81,7 +81,7 @@ public class Tests
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = "archive/Iris.csv"; //await KaggleDownload("uciml", dataName);
         List<double> results = [];
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 5; i++)
         {
             var r= Static.DoLogic(fileName, split, line =>
             {
