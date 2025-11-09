@@ -19,27 +19,27 @@ public static class Static
 
     public static double DoLogic(string fileName, double split, Func<string, (double[], string label)> func)
     {
-        IEnumerable<string> lines = File.ReadLines("archive/train.csv"); // Lazily read lines
-        IEnumerable<string> lines2 = File.ReadLines("archive/test.csv"); // Lazily read lines
-        (double[] filteredInput, string label)[] result = lines.Skip(1)
-            .Select(func).ToArray();
-        (double[] filteredInput, string label)[] result2 = lines2.Skip(1)
-            .Select(func).ToArray();
+        IEnumerable<string> lines = File.ReadLines(fileName); // Lazily read lines
+        IEnumerable<string> lines2 = File.ReadLines(fileName); // Lazily read lines
+        var result = lines.Skip(1)
+            .Select(func).Where(x=> x.label != "null" && !string.IsNullOrEmpty(x.label)).ToArray();
+        var result2 = lines2.Skip(1)
+            .Select(func).Where(x=>x.label != "null" && !string.IsNullOrEmpty(x.label)).ToArray();
         
         Random r = new();
         var sampleBeing = 0;
         var sampleSize = 150;
 
         result = result.ToArray();
-//        r.Shuffle(result);
+        r.Shuffle(result);
 
         int length = (int)(result.Length * split);
-        IEnumerable<(double[] filteredInput, string label)> train = result;//.Take(length);
-        List<(double[] filteredInput, string label)> test = result2.ToList();//.Skip(length).ToList();
+        var train = result.Take(length);
+        var test = result.Skip(length).ToList();//.Skip(length).ToList();
         OneVsAllClassifier oneVsAllClassifier = new(train);
 
         oneVsAllClassifier.fit();
-        int correctCount = test.Count(x => oneVsAllClassifier.Predict(x.filteredInput) == x.label);
+        int correctCount = test.Count(x => oneVsAllClassifier.Predict(x.Item1) == x.label);
         double finalR = (double)correctCount / test.Count;
         File.WriteAllText($"result_{r.Next()}_{DateTime.Now.Minute}", $"Result %: {finalR}");
         Console.WriteLine("correct: " + finalR);

@@ -234,7 +234,7 @@ public class SvmOptimizer
 
     public static double LinearKernel(IEnumerable<double> xj, IEnumerable<double> x)
     {
-        return RbfKernel(xj.ToArray(), x.ToArray(), 1);
+        return RbfKernel(xj.ToArray(), x.ToArray(), 0.5);
         return xj.InnerProduct(x);
     }
 

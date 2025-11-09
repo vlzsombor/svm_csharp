@@ -77,11 +77,11 @@ public class Tests
     [Test]
     public async Task Iris()
     {
-        double split = 0.8;
+        double split = 0.7;
         string dataName = "breast-cancer-wisconsin-data";
         var fileName = "archive/Iris.csv"; //await KaggleDownload("uciml", dataName);
         List<double> results = [];
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 10; i++)
         {
             var r= Static.DoLogic(fileName, split, line =>
             {
@@ -151,21 +151,46 @@ public class Tests
         var fileName = await Static.KaggleDownload("yasserh", dataName);
         var result = Static.DoLogic(fileName, 0.7f, s =>
         {
-            var split = s.Split(',');
+            try
+            {
 
-            var train = split[0..10].Select(Convert.ToDouble);
-            var label = split[10];
+                var split = s.Split(',');
 
-            return (train.ToArray(), label);
+                var train = split[..^1].Select(Convert.ToDouble);
+                var label = split[^1];
+
+                return (train.ToArray(), label);
+            }
+            catch (Exception e)
+            {
+            }
+
+            return ([], "null");
         } );
 
     }
     [Test]
     public async Task Test6()
     {
-        string dataName = "thyroid-disease-data-set";
-        var fileName = await Static.KaggleDownload("yasserhessein", dataName);
-        //var result = Static.DoLogic(fileName, 0.1f);
+        //string dataName = "thyroid-disease-data-set";
+        //var fileName = await Static.KaggleDownload("yasserhessein", dataName);
+        var result = Static.DoLogic("archive/penguins_size.csv", 0.8f, x =>
+        {
+            try
+            {
+
+                var s = x.Split(',');
+                var label = s[0];
+                var train = s[2..4].Select(Convert.ToDouble);
+
+                return (train.ToArray(), label);
+            }
+            catch
+            {
+            }
+
+            return ([], "null");
+        });
 
     }
 

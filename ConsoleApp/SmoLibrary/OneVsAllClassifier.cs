@@ -30,7 +30,8 @@ public class OneVsAllClassifier
 
     public string Predict(IEnumerable<double> doubles)
     {
-        IEnumerable<double> r = Smos.Select(x => x.Value.Predict(doubles));
+
+        
         return Smos.OrderByDescending(x => x.Value.Predict(doubles)).First().Key;
     }
 
