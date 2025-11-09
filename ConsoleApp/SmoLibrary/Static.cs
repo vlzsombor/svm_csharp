@@ -26,6 +26,31 @@ public static class Static
 
         return result.Select(x => oneVsAllClassifier.Predict(x.Item1));
     }
+    public static async Task LoadSvmAccuracy(string jsonPath, string testDataSetPath, int length, Func<string, (double[], string label)> func)
+    {
+        var jsonConfig = await File.ReadAllTextAsync(jsonPath);
+        OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig);
+        
+        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
+
+        var result = lines 
+            .Select(func).Where(x=> !string.IsNullOrEmpty(x.label) && x.label != "null").Take(length).ToArray();
+
+        int i = 0;
+        int corr = 0;
+        int correctCount = result.Count(x =>
+        {
+            i++;
+            var c= oneVsAllClassifier.Predict(x.Item1) == (x.label == "1" ? "1" : "-1");
+//            Console.WriteLine(c + " " + i++);
+            if (c) corr++;
+            Console.WriteLine(((double)corr)/i);
+            return c;
+        });
+        
+        double finalR = (double)correctCount / result.Length;
+        Console.WriteLine("correct: " + finalR);
+    }
     public static double DoLogic(string fileName, double split, Func<string, (double[], string label)> func)
     {
         var lines = File.ReadLines(fileName).Skip(1).ToArray(); // Lazily read lines
@@ -41,7 +66,7 @@ public static class Static
 //        var result2 = lines2.Skip(1)
 //            .Select(func).Where(x=>x.label != "null" && !string.IsNullOrEmpty(x.label)).ToArray();
 
-        result = result.Where(x => x.label == "1").Take(1000).Concat(result.Where(x => x.label != "1").Take(1000)).ToArray();
+        result = result.Where(x => x.label == "1").Take(1000).Concat(result.Where(x => x.label == "8").Take(1000)).ToArray();
         
         r.Shuffle(result);
         

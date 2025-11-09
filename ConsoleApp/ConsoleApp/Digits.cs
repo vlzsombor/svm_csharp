@@ -50,7 +50,8 @@ public class Digits
     {
         var ones = "archive/mnist/ones.csv";
         var nonones = "archive/mnist/nonOnes.csv";
-        var result = await Static.LoadSvm("archive/mnist/oneVsAllClassifier7.json", nonones, Func);
-        Console.WriteLine("I think the provided numbers are 0: " + string.Join(" ", result));
+       // var result = await Static.LoadSvm(FilePath, nonones, Func);
+        
+        await Static.LoadSvmAccuracy("archive/mnist/oneVsAllClassifier7.json", FilePath, 50_000, Func);
     }
 }
