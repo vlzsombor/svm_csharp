@@ -1,11 +1,14 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Security.Principal;
 
 namespace ClassLibrary1;
 
 public class SvmOptimizer
 {
     private IEnumerable<SvmNumber> _dataPoints;
-        
+
+    //public bool IsFitted { get; private set; }
     private SvmConfig _svmConfig => SvmConfig.GetDefault();
 
     public SvmOptimizer(IEnumerable<SvmNumber> dataPoints, SvmConfig? svmConfig = null)
@@ -40,7 +43,7 @@ public class SvmOptimizer
     public void Fit()
     {
         int i = 0;
-
+        SupportVectors = _dataPoints.ToList();
         _dataPoints.ToList().ForEach(x => x.ErrorCache = Error(x));
         while (i < SvmConfig.MAX_ITER)
         {
@@ -71,12 +74,10 @@ public class SvmOptimizer
             heuristic2.Alpha = alpha2new;
             heuristic1.ErrorCache = Error(heuristic1);
             heuristic2.ErrorCache = Error(heuristic2);
-            Console.WriteLine(i);
         }
 
         SupportVectors = _dataPoints.Where(x=>x.Alpha > 0).ToList();
         Logger.Log("svm trained");
-        Console.WriteLine("Svm is trained");
     }
 
     public SvmNumber Heuristic1(SvmNumber alpha1)
@@ -157,7 +158,8 @@ public class SvmOptimizer
 
     public double Error(SvmNumber svmNumber)
     {
-        return Predict(svmNumber) - svmNumber.YLabel;
+        var error = Predict(svmNumber) - svmNumber.YLabel;
+        return error;
     }
 
     public double NewAlpha1(SvmNumber n1, SvmNumber n2, double alphanew)
@@ -180,7 +182,7 @@ public class SvmOptimizer
         bool cond2 = (svmNumber.Alpha > 0) && (ro > _svmConfig.KktThr);
         return !(cond1 || cond2);
     }
-
+/*
     public double Predict(IEnumerable<double> inputSvmNumber)
     {
         if (_svmConfig.KernelType == KernelType.Linear)
@@ -192,13 +194,15 @@ public class SvmOptimizer
                           * sn.Alpha
                           * Kernel(sn.XDataPoints, inputSvmNumber))
             .Sum() + B;
-    }
-    public double Predict2(IEnumerable<double> inputSvmNumber)
+    }*/
+    public double Predict2(double[] inputSvmNumber)
     {
-        if (_svmConfig.KernelType == KernelType.Linear)
-        {
-        }
+        
+        double result = B;
+        result += ParallelEnumerable.Range(0, SupportVectors.Count)
+            .Sum(i => SupportVectors[i].YLabel * SupportVectors[i].Alpha * Kernel(SupportVectors[i].XDataPoints, inputSvmNumber));
 
+        return result;
         return SupportVectors 
             .Select(sn => sn.YLabel
                           * sn.Alpha
@@ -207,21 +211,22 @@ public class SvmOptimizer
     }
     public double Predict(SvmNumber inputSvmNumber)
     {
-        return Predict(inputSvmNumber.XDataPoints);
+        return Predict2(inputSvmNumber.XDataPoints);
     }
 
 
-    public double Kernel(IEnumerable<double> xj, IEnumerable<double> x)
+    public double Kernel(double[] xj, double[] x)
     {
         return _svmConfig.KernelType switch
         {
-            KernelType.Gaussian => RbfKernel(xj.ToArray(), x.ToArray(), 1.0/784),
+            KernelType.Gaussian => RbfKernel(xj, x, SvmConfig.GAMMA),
             KernelType.Linear => xj.InnerProduct(x)
         };
     }
 
     public static double RbfKernel(double[] x1, double[] x2, double gamma)
     {
+        return RbfSimd(x1, x2, gamma);
         double squaredDistance = 0.0f;
         for (int i = 0; i < x1.Length; i++)
         {
@@ -231,7 +236,32 @@ public class SvmOptimizer
 
         return (double)Math.Exp(-gamma * squaredDistance);
     }
+    public static double RbfSimd(double[] xi, double[] xj, double gamma)
+    {
+        int simdLength = Vector<double>.Count;
+        int n = xi.Length;
+        int i = 0;
+        Vector<double> sumVec = Vector<double>.Zero;
 
+        for (; i <= n - simdLength; i += simdLength)
+        {
+            var v1 = new Vector<double>(xi, i);
+            var v2 = new Vector<double>(xj, i);
+            var diff = v1 - v2;
+            sumVec += diff * diff;
+        }
+
+        double sum = 0;
+        for (int k = 0; k < simdLength; k++)
+            sum += sumVec[k];
+        for (; i < n; i++)
+        {
+            double diff = xi[i] - xj[i];
+            sum += diff * diff;
+        }
+
+        return Math.Exp(-gamma * sum);
+    }
     public double CalculateB(SvmNumber s1, SvmNumber s2, double alphaNew1, double alphaNew2, double e1, double e2)
     {
         double b1 = B - e1 -

@@ -1,99 +1,37 @@
 ﻿using System.Globalization;
 using System.IO.Compression;
-using System.Text.Json;
+using System.Numerics;
 
 //Der Iris-Datensatz (nur zwei Klassen, z. B. Setosa vs. Versicolor) ist linear separierbar bei den Features sepal length und petal length.
 namespace ClassLibrary1;
 
 public static class Static
 {
-    public static double InnerProduct(this IEnumerable<double> u, IEnumerable<double> v)
+    
+    public static double InnerProduct(this double[] u, double[] v)
     {
-        return u.Zip(v, (a, b) => a * b).Sum();
-    }
-
-    public static async Task<IEnumerable<string>> LoadSvm(string jsonPath, string testDataSetPath,  Func<string, (double[], string label)> func)
-    {
-        var jsonConfig = await File.ReadAllTextAsync(jsonPath);
-        OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig);
         
-            
-        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
-
-//        IEnumerable<string> lines2 = File.ReadLines(fileName); // Lazily read lines
-        var result = lines 
-            .Select(func).Where(x=> !string.IsNullOrEmpty(x.label) && x.label != "null").ToArray();
-
-        return result.Select(x => oneVsAllClassifier.Predict(x.Item1));
-    }
-    public static async Task LoadSvmAccuracy(string jsonPath, string testDataSetPath, int length, Func<string, (double[], string label)> func)
-    {
-        var jsonConfig = await File.ReadAllTextAsync(jsonPath);
-        OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig);
-        
-        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
-
-        var result = lines 
-            .Select(func).Where(x=> !string.IsNullOrEmpty(x.label) && x.label != "null").Take(length).ToArray();
-
+        int length = u.Length;
+        int simdLength = Vector<double>.Count;
         int i = 0;
-        int corr = 0;
-        int correctCount = result.Count(x =>
+        Vector<double> acc = Vector<double>.Zero;
+
+        for (; i <= length - simdLength; i += simdLength)
         {
-            i++;
-            var c= oneVsAllClassifier.Predict(x.Item1) == (x.label == "1" ? "1" : "-1");
-//            Console.WriteLine(c + " " + i++);
-            if (c) corr++;
-            Console.WriteLine(((double)corr)/i);
-            return c;
-        });
-        
-        double finalR = (double)correctCount / result.Length;
-        Console.WriteLine("correct: " + finalR);
-    }
-    public static double DoLogic(string fileName, double split, Func<string, (double[], string label)> func)
-    {
-        var lines = File.ReadLines(fileName).Skip(1).ToArray(); // Lazily read lines
-        
-        Random r = new();
-//        r.Shuffle();
-
-          r.Shuffle(lines);
-          var linesfiltered = lines[..20_000];
-//        IEnumerable<string> lines2 = File.ReadLines(fileName); // Lazily read lines
-        var result = linesfiltered 
-            .Select(func).Where(x=> x.label != "null" && !string.IsNullOrEmpty(x.label)).ToArray();
-//        var result2 = lines2.Skip(1)
-//            .Select(func).Where(x=>x.label != "null" && !string.IsNullOrEmpty(x.label)).ToArray();
-
-        result = result.Where(x => x.label == "1").Take(1000).Concat(result.Where(x => x.label == "8").Take(1000)).ToArray();
-        
-        r.Shuffle(result);
-        
-        int length = (int)(result.Length * split);
-        var train = result.Take(length);
-        var test = result.Skip(length).ToList();//.Skip(length).ToList();
-        OneVsAllClassifier oneVsAllClassifier = new(train);
-        Console.WriteLine("Fit start:");
-        oneVsAllClassifier.fit();
-
-        var jsonString = JsonSerializer.Serialize(oneVsAllClassifier);
-        File.WriteAllText($"oneVsAllClassifier{DateTime.Now.Minute}.json", jsonString);
-
-// Deserialisieren
-        int correctCount = test.Count(x => oneVsAllClassifier.Predict(x.Item1) == (x.label == "1" ? "1": "-1"));
-        double finalR = (double)correctCount / test.Count;
-        File.WriteAllText($"result_{r.Next()}_{DateTime.Now.Minute}", $"Result %: {finalR}");
-        Console.WriteLine("correct: " + finalR);
-        foreach (KeyValuePair<string, SvmOptimizer> VARIABLE in oneVsAllClassifier.Smos)
-        {
-//            Console.WriteLine(VARIABLE.Key);
-//            Console.WriteLine(string.Join(" ", VARIABLE.Value.W.Select(x => x.ToString(CultureInfo.InvariantCulture))));
-            Console.WriteLine(VARIABLE.Value.B);
-            Console.WriteLine();
+            var vu = new Vector<double>(u, i);
+            var vv = new Vector<double>(v, i);
+            acc += vu * vv;
         }
 
-        return finalR;
+        double sum = 0.0;
+        for (int j = 0; j < simdLength; j++)
+            sum += acc[j];
+
+        for (; i < length; i++)
+            sum += u[i] * v[i];
+
+        return sum;
+        return u.Zip(v, (a, b) => a * b).Sum();
     }
 
 
@@ -129,4 +67,15 @@ public static class Static
 
         throw new ArgumentException();
     }
+
+    public static string GetSavePath(string directory, string filePath)
+    {
+        if (Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        return Path.Combine(directory, filePath);
+    }
+    public static string PathCombine(this DirectoryInfo directoryInfo, string path) => Path.Combine(directoryInfo.FullName, path);
 }

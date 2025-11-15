@@ -5,53 +5,47 @@ namespace SVM;
 
 public class Digits
 {
-    private const string FilePath = "archive/mnist/train.csv";
-    
+    public const string FilePath = "archive/mnist/train.csv";
+    public Runner Runner;
+
+    public Digits(string[] labelsToIdentify, int size)
+    {
+        if (labelsToIdentify is null or { Length: 0 })
+        {
+            labelsToIdentify = new[] { "0", "1", "" };
+        }
+        
+        Runner = new Runner(labelsToIdentify, size);
+    }
     public void Main()
     {
+        Logger.Log($"entered {nameof(Main)}");
         var result = new List<double>();
-        for (int i = 0; i < 5; i++)
-        {
-            var r = Static.DoLogic(FilePath, 0.8, Func);
-            result.Add(r);
-        }
-
-        foreach (var r in result)
-        {
-            Console.WriteLine(r);
-        }
+        var r = Runner.DoLogic(FilePath, Func);
+        result.Add(r);
     }
 
-    private static Func<string, (double[], string label)> Func
-    {
-        get
+    private static Func<string, DataLabel> Func =>
+        s =>
         {
-            Func<string, (double[], string label)> func = s =>
+            try
             {
-                try
-                {
 
-                    var res = s.Split(',');
-                    var label = res[0];
-                    var train = res[1..].Select(x=> Convert.ToDouble(x) / 255.0).ToArray();
-                    return (train, label);
-                }
-                catch (Exception e)
-                {
-                }
-
-                return ([], "");
-            };
-            return func;
-        }
-    }
+                var res = s.Split(',');
+                var label = res[0];
+                var train = res[1..].Select(x=> Convert.ToDouble(x) / 255.0).ToArray();
+                return new(train, label);
+            }
+            catch
+            {
+                // ignored
+            }
+            return new([], "");
+        };
 
     public async Task MainLoad()
     {
-        var ones = "archive/mnist/ones.csv";
-        var nonones = "archive/mnist/nonOnes.csv";
-       // var result = await Static.LoadSvm(FilePath, nonones, Func);
-        
-        await Static.LoadSvmAccuracy("archive/mnist/oneVsAllClassifier7.json", FilePath, 50_000, Func);
+        Logger.Log($"entered {nameof(MainLoad)}");
+        await Runner.LoadSvmAccuracy("archive/mnist/OneVsAllClassifier-0-1-labelsToIdentify-0-1.json", FilePath, 50_000, Func);
     }
 }

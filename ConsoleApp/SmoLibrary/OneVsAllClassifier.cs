@@ -2,17 +2,17 @@
 
 public class OneVsAllClassifier
 {
-    public OneVsAllClassifier(IEnumerable<(double[] filteredInput, string label)> result)
+    public OneVsAllClassifier(IEnumerable<DataLabel> result)
     {
-        List<string> labels = result.GroupBy(x => x.label).Select(x => x.Key).Distinct().ToList();
+        List<string> labels = result.GroupBy(x => x.Label).Select(x => x.Key).Distinct().ToList();
         Dictionary<string, List<SvmNumber>> list = [];
         int i = 0;
-        foreach ((IEnumerable<double> input, string label) r in result)
+        foreach (var r in result)
         {
             labels.ForEach(x =>
             {
                 list.TryAdd(x, new List<SvmNumber>());
-                list[x].Add(new SvmNumber(i, r.input, r.label == x ? 1 : -1, 0));
+                list[x].Add(new SvmNumber(i, r.Points, r.Label == x ? 1 : -1, 0));
             });
 
             i++;
@@ -30,8 +30,6 @@ public class OneVsAllClassifier
 
     public void fit()
     {
-        Smos.First(x=>x.Key == "1").Value.Fit();
-        return;
         Parallel.ForEach(Smos, item =>
         { 
             Logger.Log("started: ");
@@ -39,23 +37,29 @@ public class OneVsAllClassifier
         });
     }
 
-    public string Predict(IEnumerable<double> doubles)
+    public string Predict(double[] doubles)
     {
-        var r = Smos.First(x => x.Key == "1").Value.Predict2(doubles);
-
-        if (r > 0)
-        {
-            return "1";
-        }
-
-        return "-1";
-        return Smos.OrderByDescending(x => x.Value.Predict(doubles)).First().Key;
+//        
+//        var r=  Smos.First(x=>x.Key == "1").Value.Predict2(doubles);
+////            .Where(x=>x.Value.IsFitted)
+//
+//        if (r > 0)
+//        {
+//            return "1";
+//        }
+//
+//        return "-1";
+        
+        return Smos
+//            .Where(x=>x.Value.IsFitted)
+            .Where(x=>x.Value.SupportVectors != null)
+            .OrderByDescending(x => x.Value.Predict2(doubles)).First().Key;
     }
 
-    public IEnumerable<string> Predict(IEnumerable<IEnumerable<double>> svmNumbers)
+    public IEnumerable<string> Predict(IEnumerable<double[]> svmNumbers)
     {
         return svmNumbers.Select(number =>
-            Smos.OrderByDescending(y => y.Value.Predict(number))
+            Smos.OrderByDescending(y => y.Value.Predict2(number))
                 .First().Key);
     }
 

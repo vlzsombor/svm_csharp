@@ -1,0 +1,9 @@
+﻿services:
+  svmlibrary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/vlzsombor/svm:latest
+    container_name: myapp
+    volumes:
+      - ./output:/app/data
