@@ -1,16 +1,20 @@
 ﻿using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace ClassLibrary1;
 
 public class Runner(IEnumerable<string> labelsToIdentify, int size)
 {
-#if Debug
-    public const string MNT_PATH = "";
-    #else
-    public const string MNT_PATH ="/app/data/";
-#endif
     
+    public static string MNT_PATH
+    {
+        get
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return string.Empty;
+            return "/app/data/";
+        }
+    }
     public async Task<IEnumerable<string>> LoadSvm(string jsonPath, string testDataSetPath,  Func<string, (double[], string label)> func)
     {
         var jsonConfig = await File.ReadAllTextAsync(jsonPath);

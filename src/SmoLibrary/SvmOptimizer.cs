@@ -45,7 +45,7 @@ public class SvmOptimizer
         int i = 0;
         SupportVectors = _dataPoints.ToList();
         _dataPoints.ToList().ForEach(x => x.ErrorCache = Error(x));
-        while (i < SvmConfig.MAX_ITER)
+        while (i < _svmConfig.MaxIter)
         {
             i++;
             SvmNumber? heuristic2 = Heuristic2();
