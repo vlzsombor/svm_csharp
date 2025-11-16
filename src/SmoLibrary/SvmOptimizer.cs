@@ -9,12 +9,12 @@ public class SvmOptimizer
     private IEnumerable<SvmNumber> _dataPoints;
 
     //public bool IsFitted { get; private set; }
-    private SvmConfig _svmConfig => SvmConfig.GetDefault();
+    private readonly SvmConfig _svmConfig;
 
-    public SvmOptimizer(IEnumerable<SvmNumber> dataPoints, SvmConfig? svmConfig = null)
+    public SvmOptimizer(IEnumerable<SvmNumber> dataPoints, SvmConfig config)
     {
-        svmConfig ??= SvmConfig.GetDefault();
         _dataPoints = dataPoints;
+        _svmConfig = config;
     }
 
     public SvmOptimizer()

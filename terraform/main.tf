@@ -113,6 +113,36 @@ resource "azurerm_container_group" "container" {
     password = var.github_token
   }
 }
+
+
+resource "azurerm_container_group" "container-better" {
+  name                = "aci-app-better"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  os_type             = "Linux"
+  restart_policy      = "Never"
+  ip_address_type = "None"
+  container {
+    name   = "app"
+    image  = var.github_image
+    cpu    = "2"
+    memory = "4"
+
+    volume {
+      name                 = "data"
+      mount_path           = var.volume_path
+      storage_account_name = azurerm_storage_account.storage.name
+      storage_account_key  = azurerm_storage_account.storage.primary_access_key
+      share_name           = azurerm_storage_share.share.name
+    }
+  }
+
+  image_registry_credential {
+    server   = "ghcr.io"
+    username = var.github_username
+    password = var.github_token
+  }
+}
 output "container_fqdn" {
   value = azurerm_container_group.container.fqdn
 }

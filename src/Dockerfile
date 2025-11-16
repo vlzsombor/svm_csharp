@@ -19,5 +19,5 @@ RUN dotnet publish "./ConsoleApp.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENV svm_targets=0-1-2-3-4-5-6-7-8
+ENV svm_targets=0-1-2-3-4-5-6-7-8-9
 ENTRYPOINT ["sh", "-c", "dotnet ConsoleApp.dll"]

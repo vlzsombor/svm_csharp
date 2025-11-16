@@ -5,7 +5,9 @@ namespace SVM;
 
 public class Digits
 {
-    public const string FilePath = "archive/mnist/train.csv";
+    public const string FilePath = Runner.MNT_PATH + "mnist_data/mnist_train.csv";
+    public const string TestFilePath = Runner.MNT_PATH + "mnist_data/mnist_test.csv";
+    //public const string TestFilePath ="archive/mnist/mynumber.csv";// "archive/mnist/test.csv";
     public Runner Runner;
 
     public Digits(string[] labelsToIdentify, int size)
@@ -17,12 +19,14 @@ public class Digits
         
         Runner = new Runner(labelsToIdentify, size);
     }
-    public void Main()
+    public async Task Main(SvmConfig config)
     {
         Logger.Log($"entered {nameof(Main)}");
-        var result = new List<double>();
-        var r = Runner.DoLogic(FilePath, Func);
-        result.Add(r);
+        var r = Runner.DoLogic(FilePath, Func, config);
+        Logger.Log($"End fitting {nameof(Main)}");
+        Logger.Log($"start accuracy measurement  {nameof(Main)}");
+        await Runner.LoadSvmAccuracy(r, TestFilePath, Func);
+        Logger.Log($"end accuracy measurement  {nameof(Main)}");
     }
 
     private static Func<string, DataLabel> Func =>
@@ -46,6 +50,6 @@ public class Digits
     public async Task MainLoad()
     {
         Logger.Log($"entered {nameof(MainLoad)}");
-        await Runner.LoadSvmAccuracy("archive/mnist/OneVsAllClassifier-0-1-labelsToIdentify-0-1.json", FilePath, 50_000, Func);
+        await Runner.LoadSvmAccuracy("archive/mnist/OneVsAllClassifier-2147483647-labelsToIdentify-0-1-2-3-4-5-6-7-8_4212.json", TestFilePath, Func);
     }
 }

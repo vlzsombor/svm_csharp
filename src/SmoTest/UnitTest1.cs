@@ -41,7 +41,7 @@ public class Tests
     [Test]
     public void Test1()
     {
-        SvmOptimizer SvmOptimizer = new(svmNumbers);
+        SvmOptimizer SvmOptimizer = new(svmNumbers, SvmConfig.GetDefault());
         bool res = SvmOptimizer.Check_KKT(svmNumbers.First());
         Assert.False(res);
     }
@@ -55,7 +55,7 @@ public class Tests
 
         r.Shuffle(svmNumbers);
 
-        SvmOptimizer SvmOptimizer = new(svmNumbers.Take(length));
+        SvmOptimizer SvmOptimizer = new(svmNumbers.Take(length), SvmConfig.GetDefault());
         SvmOptimizer.Fit();
         int correct = 0;
         int total = 0;
@@ -90,9 +90,7 @@ public class Tests
                 double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
                 string label = r[^1];
                 return new DataLabel(input, label);
-            });
-            results.Add(r);
-            
+            }, SvmConfig.GetDefault());
         }
 
         Console.WriteLine("average" + results.Average());

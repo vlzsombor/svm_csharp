@@ -2,7 +2,7 @@
 
 public class OneVsAllClassifier
 {
-    public OneVsAllClassifier(IEnumerable<DataLabel> result)
+    public OneVsAllClassifier(IEnumerable<DataLabel> result, SvmConfig config)
     {
         List<string> labels = result.GroupBy(x => x.Label).Select(x => x.Key).Distinct().ToList();
         Dictionary<string, List<SvmNumber>> list = [];
@@ -18,7 +18,7 @@ public class OneVsAllClassifier
             i++;
         }
 
-        foreach (KeyValuePair<string, List<SvmNumber>> e in list) Smos.Add(e.Key, new SvmOptimizer(e.Value));
+        foreach (KeyValuePair<string, List<SvmNumber>> e in list) Smos.Add(e.Key, new SvmOptimizer(e.Value, config));
     }
 
     public OneVsAllClassifier()
@@ -32,7 +32,7 @@ public class OneVsAllClassifier
     {
         Parallel.ForEach(Smos, item =>
         { 
-            Logger.Log("started: ");
+            Logger.Log($"started fitting: {item.Key}");
             item.Value.Fit();
         });
     }
