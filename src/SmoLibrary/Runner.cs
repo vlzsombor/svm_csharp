@@ -61,6 +61,7 @@ public class Runner(IEnumerable<string> labelsToIdentify, int size)
             allCount++;
         });
         var result = (double)correctCount / allCount;
+        Logger.Log($"{correctCount}/{allCount}");
         Logger.Log("The accuracy is: "+ result.ToString(CultureInfo.InvariantCulture));
         return result;
     }

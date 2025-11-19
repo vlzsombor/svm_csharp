@@ -52,9 +52,9 @@ public class Digits
             return new([], "");
         };
 
-    public async Task MainLoad()
+    public async Task MainLoad(string path)
     {
         Logger.Log($"entered {nameof(MainLoad)}");
-        await Runner.LoadSvmAccuracy("archive/mnist/OneVsAllClassifier-2147483647-labelsToIdentify-0-1-2-3-4-5-6-7-8_4212.json", TestFilePath, Func);
+        await Runner.LoadSvmAccuracy(path, TestFilePath, Func);
     }
 }
