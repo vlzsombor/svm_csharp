@@ -6,8 +6,10 @@ public class Program
 {
     public static async Task Main()
     {
-        //var summary = BenchmarkRunner.Run<BenchmarkTest>();
-        //return;
+//        var summary = BenchmarkRunner.Run<BenchmarkTest>();
+        BenchmarkTest benchmarkTest = new BenchmarkTest();
+        benchmarkTest.Main();
+        return;
         var svmTargets = Environment.GetEnvironmentVariable("svm_targets") ?? "0";
         var targets = svmTargets.Split('-');
         var svmSize = Environment.GetEnvironmentVariable("svm_size");

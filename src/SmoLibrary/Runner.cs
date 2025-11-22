@@ -90,8 +90,7 @@ public class Runner(IEnumerable<string> labelsToIdentify, int size)
         var lines = File.ReadLines(fileName).Skip(1).ToArray(); // Lazily read lines
         
         Random r = new();
-        var linesfiltered = lines[..];
-        var result = linesfiltered 
+        var result = lines 
             .Select(func).Where(x=> !string.IsNullOrEmpty(x.Label) && x.Points.Length != 0 && x.Label != "null").ToArray();
         result = FilterTargetLabels(result).ToArray();
         r.Shuffle(result);
