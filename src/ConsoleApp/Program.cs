@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Running;
+﻿using System.Diagnostics;
+using BenchmarkDotNet.Running;
 using ClassLibrary1;
 using SVM;
 
@@ -6,9 +7,16 @@ public class Program
 {
     public static async Task Main()
     {
-//        var summary = BenchmarkRunner.Run<BenchmarkTest>();
+        //var summary = BenchmarkRunner.Run<BenchmarkTest>();
+        var dateTimeNow = DateTime.Now;
+        var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
         benchmarkTest.Main();
+        sw.Stop();
+        Console.WriteLine($"{sw.Elapsed.TotalSeconds}");
+        var dateTimeNew = DateTime.Now;
+        var diff = dateTimeNow - dateTimeNew;
+        Console.WriteLine("Time difference" + diff.TotalSeconds);
         return;
         var svmTargets = Environment.GetEnvironmentVariable("svm_targets") ?? "0";
         var targets = svmTargets.Split('-');
