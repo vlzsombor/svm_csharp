@@ -77,12 +77,16 @@ public class Tests
     }
 
     */
+
+public const string irisSetosa = "Iris-setos";
+public const string irisVerisicolor = "Iris-versicolor";
+public const string irisVirginica = "Iris-virginica";
+    
     [Test]
     public async Task Iris()
     {
-        
         var fileName = "archive/IrisTrain.csv";
-        var svmConfig = SvmConfig.GetDefault(["Iris-setosa", "Iris-versicolor", "Iris-virginica"], KernelType.Gaussian);
+        var svmConfig = SvmConfig.GetDefault([irisSetosa, irisVirginica, irisVerisicolor], 0.5, KernelType.Gaussian);
         Runner runner = new Runner(300, svmConfig);
         Func<string[], DataLabelSoa> func = lines =>
         {
@@ -94,7 +98,7 @@ public class Tests
                 string[] r = lines[j].Split(',');
                 string label = r[^1];
                 labels[j] = label;
-                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                double[] input = r[1..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
                 points[j] = input;
             }
             DataLabelSoa dataLabelSoa = new DataLabelSoa(points, labels);
@@ -103,7 +107,5 @@ public class Tests
         var r= await runner.DoLogic(fileName, func, svmConfig);
 
         await runner.LoadSvmAccuracy(r, "archive/IrisTest.csv", func);
-//        Console.WriteLine("average" + results.Average());
-
     }
 }

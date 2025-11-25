@@ -67,6 +67,7 @@ public class SvmOptimizer
 
             _svmNumberSoa.ErrorCache[heuristic1] = Error(heuristic1);
             _svmNumberSoa.ErrorCache[heuristic2] = Error(heuristic2);
+//            Logger.Log($"B: {B}");
         }
         var ints = _svmNumberSoa.Alpha.Where((x, i)=>x > 0).Select((x,i) => i).ToArray();
         SupportVectors = _svmNumberSoa.SetSupportVector();
@@ -131,16 +132,29 @@ public class SvmOptimizer
 //        var list = _dataPoints.Where(x => !x.Optimized);
         for (int i = 0; i < _svmNumberSoa.Length; i++)
         {
+            if (_svmNumberSoa.Optimized[i])
+            {
+                continue;
+            }
             _svmNumberSoa.Optimized[i] = true;
             if (!Check_KKT(i))
             {
                 return i;
             }
         }
-        _svmNumberSoa.UpdateErrorCache(Error);
 
         for (int i = 0; i < _svmNumberSoa.Length; i++)
         {
+            _svmNumberSoa.Optimized[i] = false;
+        }
+//        _svmNumberSoa.UpdateErrorCache(Error);
+
+        for (int i = 0; i < _svmNumberSoa.Length; i++)
+        {
+            if (_svmNumberSoa.Optimized[i])
+            {
+                continue;
+            }
             _svmNumberSoa.Optimized[i] = true;
             if (!Check_KKT(i)) return i;
         }
@@ -223,7 +237,7 @@ public class SvmOptimizer
     {
         return _svmConfig.KernelType switch
         {
-            KernelType.Gaussian => xj.RbfKernel(x, SvmConfig.GAMMA),
+            KernelType.Gaussian => xj.RbfKernel(x, _svmConfig.Gamma),
             KernelType.Linear => xj.InnerProduct(x)
         };
     }

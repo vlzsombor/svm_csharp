@@ -12,7 +12,8 @@ public class Program
         var dateTimeNow = DateTime.Now;
         var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
-        SvmConfig s = SvmConfig.GetDefault(["1"], ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+        SvmConfig s = SvmConfig.GetDefault(["1"], 1.0/784, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+            
         Digits digits2 = new(2000, s);
         await digits2.TrainAndAccuracy(s);
         sw.Stop();
@@ -28,7 +29,7 @@ public class Program
         var success = Int32.TryParse(svmSize, out int size);
         if (!success) size = int.MaxValue;
         Logger.Log($"Params: {size} {string.Join(" ", targets)}");
-        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(targets, ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(targets, ClassLibrary1.KernelType.Linear);
+        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(targets,1.0/784, ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(targets, 1.0/784, ClassLibrary1.KernelType.Linear);
         
         Digits digits = new(size, config);
         Logger.Log("started");

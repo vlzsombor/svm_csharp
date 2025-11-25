@@ -43,9 +43,7 @@ public class Runner(int size, SvmConfig svmConfig)
     public async Task LoadSvmAccuracy(OneVsAllClassifier oneVsAllClassifier, string testDataSetPath, Func<string[], DataLabelSoa> func)
     {
         string[] allLines = await File.ReadAllLinesAsync(testDataSetPath); // Lazily read lines
-        string[] dataLines = new string[allLines.Length - 1];
-        Array.Copy(allLines, 1, dataLines, 0, dataLines.Length);
-        var result = func(dataLines);
+        var result = func(allLines);
         Accuracy(oneVsAllClassifier, result);
     }
     
@@ -76,7 +74,7 @@ public class Runner(int size, SvmConfig svmConfig)
     }
     public static string LabelFilter(string s, SvmConfig svmConfig)
     {
-        return svmConfig.labelsToIdentify.Contains(s) ? s : "-1";
+        return svmConfig.LabelsToIdentify.Contains(s) ? s : "-1";
     }
 /*
     public IEnumerable<DataLabel> FilterTargetLabels(IEnumerable<DataLabel> dataLabel)
@@ -115,9 +113,10 @@ public class Runner(int size, SvmConfig svmConfig)
 
       Random r = new();
       r.Shuffle(allLines);
-        var dataLines = allLines.Skip(1).Where(x => !config.labelsToIdentify.Contains(x.Split(',').First())).Take(size / 2)
-            .Concat(allLines.Where(x => config.labelsToIdentify.Contains(x.Split(',').First())).Take(size/2)).ToArray();
+        var dataLines = allLines.Skip(1).Where(x => !config.LabelsToIdentify.Contains(x.Split(',').First())).Take(size / 2)
+            .Concat(allLines.Where(x => config.LabelsToIdentify.Contains(x.Split(',').First())).Take(size/2)).ToArray();
         r.Shuffle(dataLines);
+//      var dataLines = allLines[46..56];
         var result = func(dataLines);
         
         //result = FilterTargetLabels(result).ToArray();
@@ -129,7 +128,7 @@ public class Runner(int size, SvmConfig svmConfig)
         oneVsAllClassifier.Fit();
         string jsonString = JsonSerializer.Serialize(oneVsAllClassifier);
         var directoryInfo = Directory.CreateDirectory($"{MNT_PATH}{DateTime.Now:yy-MM-dd}");
-        File.WriteAllText($"{directoryInfo.PathCombine($"{nameof(OneVsAllClassifier)}-{size}-{nameof(svmConfig.labelsToIdentify)}-{string.Join('-', svmConfig.labelsToIdentify)}_{new Random().Next(10000)}.json")}", jsonString);
+        File.WriteAllText($"{directoryInfo.PathCombine($"{nameof(OneVsAllClassifier)}-{size}-{nameof(svmConfig.LabelsToIdentify)}-{string.Join('-', svmConfig.LabelsToIdentify)}_{new Random().Next(10000)}.json")}", jsonString);
         Logger.Log("Fit end");
         return oneVsAllClassifier;
     }

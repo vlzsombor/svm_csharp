@@ -4,7 +4,7 @@ public class OneVsAllClassifier
 {
     public OneVsAllClassifier(DataLabelSoa result, SvmConfig config)
     {
-        string[] labelsDiff = result.Label.Select(x=> config.labelsToIdentify.Contains(x) ? x : "-1").Distinct().ToArray();   //new string[result.Label.Length];
+        string[] labelsDiff = result.Label.Select(x=> config.LabelsToIdentify.Contains(x) ? x : "-1").Distinct().ToArray();   //new string[result.Label.Length];
         SvmData svmData = new(result.Points.ToArray(), result.Label);
 
         var svmNumberSoa = new SvmNumberSoa(svmData);
