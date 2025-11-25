@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace ClassLibrary1;
 
-public class Runner(IEnumerable<string> labelsToIdentify, int size)
+public class Runner(int size, SvmConfig svmConfig)
 {
     
     public static string MNT_PATH
@@ -28,82 +28,108 @@ public class Runner(IEnumerable<string> labelsToIdentify, int size)
 
         return result.Select(x => oneVsAllClassifier.Predict(x.Item1));
     }
-    public async Task LoadSvmAccuracy(string jsonPath, string testDataSetPath, Func<string, DataLabel> func)
-    {
-        var jsonConfig = await File.ReadAllTextAsync(jsonPath);
-        OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig) ?? throw new InvalidOperationException();
-        
-        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
+//    public async Task LoadSvmAccuracy(string jsonPath, string testDataSetPath, Func<string, DataLabelSoa> func)
+//    {
+//        var jsonConfig = await File.ReadAllTextAsync(jsonPath);
+//        OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig) ?? throw new InvalidOperationException();
+//        
+//        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
+//
+//        var result = lines 
+//            .Select(func).Where(x=> !string.IsNullOrEmpty(x.Label) && x.Label != "null").ToArray();
+//        Accuracy(oneVsAllClassifier, result);
+//    }
 
-        var result = lines 
-            .Select(func).Where(x=> !string.IsNullOrEmpty(x.Label) && x.Label != "null").ToArray();
+    public async Task LoadSvmAccuracy(OneVsAllClassifier oneVsAllClassifier, string testDataSetPath, Func<string[], DataLabelSoa> func)
+    {
+        string[] allLines = await File.ReadAllLinesAsync(testDataSetPath); // Lazily read lines
+        string[] dataLines = new string[allLines.Length - 1];
+        Array.Copy(allLines, 1, dataLines, 0, dataLines.Length);
+        var result = func(dataLines);
         Accuracy(oneVsAllClassifier, result);
     }
-
-    public async Task LoadSvmAccuracy(OneVsAllClassifier oneVsAllClassifier, string testDataSetPath, Func<string, DataLabel> func)
-    {
-        IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1).ToArray(); // Lazily read lines
-
-        var result = lines 
-            .Select(func).Where(x=> !string.IsNullOrEmpty(x.Label) && x.Label != "null").ToArray();
-        Accuracy(oneVsAllClassifier, result);
-    }
-
-    public double Accuracy(OneVsAllClassifier oneVsAllClassifier, IEnumerable<DataLabel> dataLabels)
+    
+    
+    public double Accuracy(OneVsAllClassifier oneVsAllClassifier, DataLabelSoa dataLabels)
     {
         int allCount = 0;
         int correctCount = 0;
-        Parallel.ForEach(dataLabels, x=>
+
+        for (int i = 0; i < dataLabels.Label.Length; i++)
         {
-            var predicted = oneVsAllClassifier.Predict(x.Points);
-            bool r = LabelFilter(predicted) == LabelFilter(x.Label);
+            var predicted = oneVsAllClassifier.Predict(dataLabels.Points[i]);
+            bool r = LabelFilter(predicted) == LabelFilter(dataLabels.Label[i]);
             if (r) correctCount++;
+            Console.WriteLine((double)correctCount/allCount);
             allCount++;
-        });
+        }
         var result = (double)correctCount / allCount;
         Logger.Log($"{correctCount}/{allCount}");
         Logger.Log("The accuracy is: "+ result.ToString(CultureInfo.InvariantCulture));
         return result;
     }
 
+    
     public string LabelFilter(string s)
     {
-        return labelsToIdentify.Contains(s) ? s : "-1";
+        return LabelFilter(s, svmConfig);
     }
+    public static string LabelFilter(string s, SvmConfig svmConfig)
+    {
+        return svmConfig.labelsToIdentify.Contains(s) ? s : "-1";
+    }
+/*
     public IEnumerable<DataLabel> FilterTargetLabels(IEnumerable<DataLabel> dataLabel)
     {
         var res = dataLabel.ToArray();
 
-        foreach (var r in res)
+        for (int index = 0; index < res.Length; index++)
         {
+            DataLabel r = res[index];
             r.Label = LabelFilter(r.Label);
         }
-        var pos = labelsToIdentify 
+
+        var pos = labelsToIdentify
             .Select(digit =>
                 res.Where(label => label.Label == digit).Take(size)).SelectMany(x=>x);
         var rest = res.Where(l => !labelsToIdentify.Contains(l.Label)).Take(size);
         return pos.Concat(rest);
     }
+*/
+    public async Task<OneVsAllClassifier> DoLogic(string fileName, Func<string[], DataLabelSoa> func, SvmConfig config)
+  {
+       string[] allLines = await File.ReadAllLinesAsync(fileName); // Lazily read lines
+//       string[] dataLines = new string[allLines.Length - 1];
+//       Array.Copy(allLines, 1, dataLines, 0, dataLines.Length);
+//        //string[] dataLines = new string[size * config.labelsToIdentify.Length];
+//        using (var reader = new StreamReader(fileName))
+//        {
+//            for (int i = -1; i<size; i++)
+//            {
+//                string? line = await reader.ReadLineAsync();
+//                if(i == -1) continue;
+//                if (line == null) break;
+//                dataLines[i] = line;
+//            }
+//        }
 
-    public OneVsAllClassifier DoLogic(string fileName, Func<string, DataLabel> func, SvmConfig config)
-    {
-        var lines = File.ReadLines(fileName).Skip(1).ToArray(); // Lazily read lines
+      Random r = new();
+      r.Shuffle(allLines);
+        var dataLines = allLines.Skip(1).Where(x => !config.labelsToIdentify.Contains(x.Split(',').First())).Take(size / 2)
+            .Concat(allLines.Where(x => config.labelsToIdentify.Contains(x.Split(',').First())).Take(size/2)).ToArray();
+        r.Shuffle(dataLines);
+        var result = func(dataLines);
         
-        Random r = new();
-        var result = lines 
-            .Select(func).Where(x=> !string.IsNullOrEmpty(x.Label) && x.Points.Length != 0 && x.Label != "null").ToArray();
-        result = FilterTargetLabels(result).ToArray();
-        r.Shuffle(result);
-        Logger.Log($"The result size: {result.Length}");
+        //result = FilterTargetLabels(result).ToArray();
+        Logger.Log($"The result size: {result.Label.Length}");
         Logger.Log($"The file path for result: {fileName}");
-        var train = result;
-        OneVsAllClassifier oneVsAllClassifier = new(train, config);
-        Logger.Log($"{oneVsAllClassifier.Smos.Count}, {string.Join(" ",oneVsAllClassifier.Smos.Keys.ToList())}");
+        OneVsAllClassifier oneVsAllClassifier = new(result, config);
+        Logger.Log($"{oneVsAllClassifier.Smos.Count}, {string.Join(" ",oneVsAllClassifier.Smos.ToList())}");
         Logger.Log("Fit start:");
-        oneVsAllClassifier.fit();
+        oneVsAllClassifier.Fit();
         string jsonString = JsonSerializer.Serialize(oneVsAllClassifier);
         var directoryInfo = Directory.CreateDirectory($"{MNT_PATH}{DateTime.Now:yy-MM-dd}");
-        File.WriteAllText($"{directoryInfo.PathCombine($"{nameof(OneVsAllClassifier)}-{size}-{nameof(labelsToIdentify)}-{string.Join('-', labelsToIdentify)}_{new Random().Next(10000)}.json")}", jsonString);
+        File.WriteAllText($"{directoryInfo.PathCombine($"{nameof(OneVsAllClassifier)}-{size}-{nameof(svmConfig.labelsToIdentify)}-{string.Join('-', svmConfig.labelsToIdentify)}_{new Random().Next(10000)}.json")}", jsonString);
         Logger.Log("Fit end");
         return oneVsAllClassifier;
     }

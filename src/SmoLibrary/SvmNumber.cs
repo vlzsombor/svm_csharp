@@ -7,46 +7,54 @@ public record SvmNumber2(int i, double[] XDataPoints, double YLabel, double Alph
     public double ErrorCache { get; set; }
 }
 
+public class SvmData
+{
+    public SvmData(double[][] xDatapoints, string[] yLabels)
+    {
+        Length = yLabels.Length;
+        if (Length != xDatapoints.Length)
+        {
+            throw new ArgumentException();
+        }
+        this.XDataPoints = xDatapoints;
+        this.YLabels = yLabels;
+    }
+
+    public string[] YLabels { get; }
+
+    public double[][] XDataPoints { get; }
+
+    public int Length { get; }
+}
+
 public class SvmNumberSoa
 {
-    public SvmNumberSoa(double[][] xDataPoints, double[] yLabel)
+    public SvmNumberSoa(SvmData data)
     {
-        Length = yLabel.Length;
-        if (xDataPoints.Length != Length) 
-        {
-            throw new ArgumentException("Imputs with different length");
-        }
-        this.XDataPoints = xDataPoints;
-        this.YLabel = yLabel;
+        Length = data.Length;
+        SvmData = data;
         this.ErrorCache = new double[Length];
         this.Alpha = new double[Length];
         this.Optimized = new bool[Length];
     }
 
-    public SvmNumberSoa Clone(int[] ints)
+    public double[][] XDataPoints => SvmData.XDataPoints;
+
+    public SvmData SvmData { get; set; }
+
+    public SvmNumberSoa SetSupportVector()
     {
-        int length = ints.Length;
-        SvmNumberSoa clone = new(new double[length][], new double[length]);
-
-        for (int i = 0; i < length; i++)
-        {
-            var index = ints[i];
-            clone.Alpha[i] = Alpha[index];
-            clone.Optimized[i] = Optimized[index];
-            clone.XDataPoints[i] = XDataPoints[index];
-            clone.YLabel[i] = YLabel[index];
-            clone.ErrorCache[i] = ErrorCache[index];
-        }
-
-        return clone;
+        SupportVectors = Alpha.Where(a => a > 0).Select((a, i) => SvmData.XDataPoints[i]).ToArray();
+        return this;
     }
+    public double[][] SupportVectors { get; private set; }
 
     public int Length { get; }
 
     public double[] Alpha { get; set; }
     public bool[] Optimized { get; set; }
-    public double[][] XDataPoints { get; init; }
-    public double[] YLabel { get; init; }
+//    public double[][] XDataPoints { get; init; }
+//    public double[] YLabel { get; init; }
     public double[] ErrorCache { get; init; }
 
     public void UpdateErrorCache(Func<int, double> errorCalculation)

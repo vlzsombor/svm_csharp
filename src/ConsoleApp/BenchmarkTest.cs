@@ -9,10 +9,11 @@ namespace SVM;
 public class BenchmarkTest
 {
     [Benchmark]
-    public void Main()
+    public async Task Main()
     {
-        SvmConfig s = SvmConfig.GetDefault() with { MaxIter = 1000 };
-        Digits digits = new(["0", "1"],1000);
-        digits.Train(s);
+        SvmConfig s = SvmConfig.GetDefault(["0"], ClassLibrary1.KernelType.Linear) with { MaxIter = 1000 };
+        Digits digits = new(3000, s);
+        await digits.Train(s);
+        
     }
 }

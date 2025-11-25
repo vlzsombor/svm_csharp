@@ -41,6 +41,12 @@
       <None Update="archive\penguins_size.csv">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="archive\IrisTest.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="archive\IrisTrain.csv">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

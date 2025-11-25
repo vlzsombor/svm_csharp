@@ -7,13 +7,15 @@ public class Program
 {
     public static async Task Main()
     {
-        //var summary = BenchmarkRunner.Run<BenchmarkTest>();
+//        var summary = BenchmarkRunner.Run<BenchmarkTest>();
+//        return;
         var dateTimeNow = DateTime.Now;
         var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
-        benchmarkTest.Main();
+        SvmConfig s = SvmConfig.GetDefault(["1"], ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+        Digits digits2 = new(2000, s);
+        await digits2.TrainAndAccuracy(s);
         sw.Stop();
-        Console.WriteLine($"{sw.Elapsed.TotalSeconds}");
         var dateTimeNew = DateTime.Now;
         var diff = dateTimeNow - dateTimeNew;
         Console.WriteLine("Time difference" + diff.TotalSeconds);
@@ -26,9 +28,9 @@ public class Program
         var success = Int32.TryParse(svmSize, out int size);
         if (!success) size = int.MaxValue;
         Logger.Log($"Params: {size} {string.Join(" ", targets)}");
-        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(ClassLibrary1.KernelType.Linear);
+        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(targets, ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(targets, ClassLibrary1.KernelType.Linear);
         
-        Digits digits = new(targets, size);
+        Digits digits = new(size, config);
         Logger.Log("started");
         Logger.Log($"Kerneltype: {config.KernelType}");
 //        await digits.TrainAndAccuracy(config);

@@ -7,8 +7,8 @@ public class Tests
 {
     private double[][] input;
     private double[] labels;
-    private IEnumerable<SvmNumber> svmNumbers;
-
+//    private IEnumerable<SvmNumber> svmNumbers;
+/*
     [SetUp]
     public void Setup()
     {
@@ -37,8 +37,8 @@ public class Tests
             r.returnLabel,
             0.0f));
     }
-    
-    
+
+
     [Test]
     public void Test1()
     {
@@ -75,26 +75,35 @@ public class Tests
         float res = (float)correct / total;
         Console.WriteLine(res);
     }
+
+    */
     [Test]
     public async Task Iris()
     {
-        double split = 0.7;
-        string dataName = "breast-cancer-wisconsin-data";
-        var fileName = "archive/Iris.csv";
-        List<double> results = [];
-        Runner runner = new Runner(["Iris-setosa", "Iris-virginica", "Iris-virginica"], 50);
-        for (int i = 0; i < 5; i++)
+        
+        var fileName = "archive/IrisTrain.csv";
+        var svmConfig = SvmConfig.GetDefault(["Iris-setosa", "Iris-versicolor", "Iris-virginica"], KernelType.Gaussian);
+        Runner runner = new Runner(300, svmConfig);
+        Func<string[], DataLabelSoa> func = lines =>
         {
-            var r= runner.DoLogic(fileName, line =>
+            double[][] points = new double[lines.Length][];
+            string[] labels = new string[lines.Length];
+            for (int j = 0; j < lines.Length; j++)
             {
-                string[] r = line.Split(',');
-                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                labels[j] = "";
+                string[] r = lines[j].Split(',');
                 string label = r[^1];
-                return new DataLabel(input, label);
-            }, SvmConfig.GetDefault());
-        }
+                labels[j] = label;
+                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                points[j] = input;
+            }
+            DataLabelSoa dataLabelSoa = new DataLabelSoa(points, labels);
+            return dataLabelSoa;
+        };
+        var r= await runner.DoLogic(fileName, func, svmConfig);
 
-        Console.WriteLine("average" + results.Average());
+        await runner.LoadSvmAccuracy(r, "archive/IrisTest.csv", func);
+//        Console.WriteLine("average" + results.Average());
 
     }
 }

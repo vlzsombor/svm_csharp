@@ -1,6 +1,14 @@
 ﻿namespace ClassLibrary1;
 
-public record DataLabel(double[] Points, string Label)
+public class DataLabelSoa(double[][] points, string[] label)
 {
-    public string Label { get; set; } = Label;
+    public double[][] Points { get; set; } = points;
+    public string[] Label { get; set; } = label;
+}
+
+
+public readonly ref struct DataLabelSoa2(ReadOnlySpan<string> label, ReadOnlySpan<double[]> values)
+{
+    public readonly ReadOnlySpan<string> Label = label;
+    public readonly ReadOnlySpan<double[]> Values = values;
 }
