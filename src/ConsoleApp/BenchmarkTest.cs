@@ -12,7 +12,7 @@ public class BenchmarkTest
     public async Task Main()
     {
         SvmConfig s = SvmConfig.GetDefault(["0"], 0.5, ClassLibrary1.KernelType.Linear) with { MaxIter = 1000 };
-        Digits digits = new(3000, s);
+        Digits digits = new(1000, s);
         await digits.Train(s);
         
     }

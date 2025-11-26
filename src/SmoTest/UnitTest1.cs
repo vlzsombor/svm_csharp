@@ -77,7 +77,6 @@ public class Tests
     }
 
     */
-
 public const string irisSetosa = "Iris-setos";
 public const string irisVerisicolor = "Iris-versicolor";
 public const string irisVirginica = "Iris-virginica";
@@ -88,7 +87,7 @@ public const string irisVirginica = "Iris-virginica";
         var fileName = "archive/IrisTrain.csv";
         var svmConfig = SvmConfig.GetDefault([irisSetosa, irisVirginica, irisVerisicolor], 0.5, KernelType.Gaussian);
         Runner runner = new Runner(300, svmConfig);
-        Func<string[], DataLabelSoa> func = lines =>
+        Func<string[], string[], int, DataLabelSoa> func = (lines, identify, size) =>
         {
             double[][] points = new double[lines.Length][];
             string[] labels = new string[lines.Length];
@@ -107,5 +106,32 @@ public const string irisVirginica = "Iris-virginica";
         var r= await runner.DoLogic(fileName, func, svmConfig);
 
         await runner.LoadSvmAccuracy(r, "archive/IrisTest.csv", func);
+    }
+
+    [Test]
+    public async Task Moons()
+    {
+        var fileName = "archive/moons.csv";
+        var svmConfig = SvmConfig.GetDefault(["1","0"], 0.5, KernelType.Gaussian);
+        Runner runner = new Runner(300, svmConfig);
+        Func<string[], string[], int, DataLabelSoa> func = (lines, identify, size) =>
+        {
+            double[][] points = new double[lines.Length][];
+            string[] labels = new string[lines.Length];
+            for (int j = 0; j < lines.Length; j++)
+            {
+                labels[j] = "";
+                string[] r = lines[j].Split(',');
+                string label = r[^1];
+                labels[j] = label;
+                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                points[j] = input;
+            }
+            DataLabelSoa dataLabelSoa = new DataLabelSoa(points, labels);
+            return dataLabelSoa;
+        };
+        var r= await runner.DoLogic(fileName, func, svmConfig);
+
+        await runner.LoadSvmAccuracy(r, "archive/moons-test.csv", func);
     }
 }

@@ -42,13 +42,6 @@ public class SvmNumberSoa
 
     public SvmData SvmData { get; set; }
 
-    public SvmNumberSoa SetSupportVector()
-    {
-        SupportVectors = Alpha.Where(a => a > 0).Select((a, i) => SvmData.XDataPoints[i]).ToArray();
-        return this;
-    }
-    public double[][] SupportVectors { get; private set; }
-
     public int Length { get; }
 
     public double[] Alpha { get; set; }

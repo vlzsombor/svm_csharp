@@ -20,6 +20,7 @@ public class Digits
         var r = await Runner.DoLogic(FilePath, Func, config);
         Logger.Log($"End fitting {nameof(TrainAndAccuracy)}");
         Logger.Log($"start accuracy measurement  {nameof(TrainAndAccuracy)}");
+        
         await Runner.LoadSvmAccuracy(r, TestFilePath, Func);
         Logger.Log($"end accuracy measurement  {nameof(TrainAndAccuracy)}");
     }
@@ -30,35 +31,128 @@ public class Digits
         var r = await Runner.DoLogic(FilePath, Func, config);
         return r;
     }
-    private static Func<string[], DataLabelSoa> Func =>
-        (s) =>
+    private static Func<string[],string[], int, DataLabelSoa> Func2 =>
+        (s, labelsToIdentify, size) =>
         {
-                string[] labels = new string[s.Length];
-                double[][] dataPoints = new double[s.Length][];
-                for (int i = 0; i < s.Length; i++)
+            Dictionary<string, int> dictionary = new Dictionary<string, int>()
+            {
+                {"-1", 0}
+            };
+            foreach (var li in labelsToIdentify)
+            {
+                dictionary.Add(li, 0);
+            }
+            string[] labels = new string[dictionary.Count * size];
+            double[][] dataPoints = new double[dictionary.Count * size][];
+            int newIndex = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var str = s[i];
+                var str2 = str.Split(',');
+                
+                if (labelsToIdentify.Contains(str2[0]))
                 {
-                    var str = s[i];
-                    var str2 = str.Split(',');
-                    labels[i] = str2[0];
-                    
-                    dataPoints[i] = new double[str2.Length - 1];
-                    for (int j = 0; j < dataPoints[i].Length; j++)
+                    var r = dictionary[str2[0]]++;
+
+                    if (r >= size)
                     {
-                        dataPoints[i][j] = Convert.ToDouble(str2[j+1]) / 255.0;
+                        continue;
                     }
                 }
+                else
+                {
+                    var r= dictionary["-1"]++;
+                    
+                    if (r >= size)
+                    {
+                        continue;
+                    }
+                }
+
+                labels[newIndex] = str2[0];
+
+
+                
+                    
+                dataPoints[newIndex] = new double[str2.Length - 1];
+                for (int j = 0; j < dataPoints[newIndex].Length; j++)
+                {
+                    dataPoints[newIndex][j] = Convert.ToDouble(str2[j+1]) / 255.0;
+                }
+                
+                newIndex++;
+            }
                 
 //                var res = s.Select(s => s.Split(','));
 //                var labels = res.Select(x=>x.First()).ToArray();
 //                var trains = res.Select(x => x.Skip(1)).Select(x => s.Select(y=> Convert.ToDouble(y)/ 255.0).ToArray()).ToArray();
-                return new(dataPoints, labels);
+            return new(dataPoints, labels);
 
-            return new([], []);
+        };   
+    
+    
+    private static Func<string[],string[], int, DataLabelSoa> Func =>
+        (s, labelsToIdentify, size) =>
+        {
+            Dictionary<string, int> dictionary = new Dictionary<string, int>()
+            {
+                {"-1", 0}
+            };
+            foreach (var li in labelsToIdentify)
+            {
+                dictionary.Add(li, 0);
+            }
+            string[] labels = new string[dictionary.Count * size];
+            double[][] dataPoints = new double[dictionary.Count * size][];
+            int newIndex = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                var str = s[i];
+                var str2 = str.Split(',');
+                
+                if (labelsToIdentify.Contains(str2[0]))
+                {
+                    var r = dictionary[str2[0]]++;
+
+                    if (r >= size)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    var r= dictionary["-1"]++;
+                    
+                    if (r >= size)
+                    {
+                        continue;
+                    }
+                }
+
+                labels[newIndex] = str2[0];
+
+
+                
+                    
+                dataPoints[newIndex] = new double[str2.Length - 1];
+                for (int j = 0; j < dataPoints[newIndex].Length; j++)
+                {
+                    dataPoints[newIndex][j] = Convert.ToDouble(str2[j+1]) / 255.0;
+                }
+                
+                newIndex++;
+            }
+                
+//                var res = s.Select(s => s.Split(','));
+//                var labels = res.Select(x=>x.First()).ToArray();
+//                var trains = res.Select(x => x.Skip(1)).Select(x => s.Select(y=> Convert.ToDouble(y)/ 255.0).ToArray()).ToArray();
+            return new(dataPoints, labels);
+
         };
 
     public async Task MainLoad(string path)
     {
         Logger.Log($"entered {nameof(MainLoad)}");
-//        await Runner.LoadSvmAccuracy(path, TestFilePath, Func);
+        await Runner.LoadSvmAccuracy(path, TestFilePath, Func);
     }
 }
