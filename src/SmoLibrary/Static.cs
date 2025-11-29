@@ -17,29 +17,7 @@ public static class Static
         }
         return result;
     }
-    public static double InnerProductParallel(double[] a, double[] b)
-    {
-        int partitions = Environment.ProcessorCount;
-        int partitionSize = a.Length / partitions;
-    
-        double[] results = new double[partitions];
-    
-        Parallel.For(0, partitions, part =>
-        {
-            int start = part * partitionSize;
-            int end = (part == partitions - 1) ? a.Length : start + partitionSize;
-            double localSum = 0;
-        
-            for (int i = start; i < end; i++)
-            {
-                localSum += a[i] * b[i];
-            }
-        
-            results[part] = localSum;
-        });
-    
-        return results.Sum();
-    }
+
     public static double RbfKernel(this double[] x1, double[] x2, double gamma)
     {
 //        return RbfSimd(x1, x2, gamma);

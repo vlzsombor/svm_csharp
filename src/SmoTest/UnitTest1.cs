@@ -111,7 +111,7 @@ public const string irisVirginica = "Iris-virginica";
     [Test]
     public async Task Moons()
     {
-        var fileName = "archive/moons.csv";
+        var fileName = "archive/breast-cancer/breast-cancer.csv";
         var svmConfig = SvmConfig.GetDefault(["1","0"], 0.5, KernelType.Gaussian);
         Runner runner = new Runner(300, svmConfig);
         Func<string[], string[], int, DataLabelSoa> func = (lines, identify, size) =>
@@ -122,9 +122,9 @@ public const string irisVirginica = "Iris-virginica";
             {
                 labels[j] = "";
                 string[] r = lines[j].Split(',');
-                string label = r[^1];
+                string label = r[1];
                 labels[j] = label;
-                double[] input = r[..^1].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
+                double[] input = r[1..].Where(x=>!string.IsNullOrEmpty(x)).Select(Convert.ToDouble).ToArray();
                 points[j] = input;
             }
             DataLabelSoa dataLabelSoa = new DataLabelSoa(points, labels);
@@ -132,6 +132,6 @@ public const string irisVirginica = "Iris-virginica";
         };
         var r= await runner.DoLogic(fileName, func, svmConfig);
 
-        await runner.LoadSvmAccuracy(r, "archive/moons-test.csv", func);
+        await runner.LoadSvmAccuracy(r, "archive/breast-cancer/breast-cancer-test.csv", func);
     }
 }

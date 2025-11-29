@@ -33,23 +33,31 @@ public class SvmNumberSoa
     {
         Length = data.Length;
         SvmData = data;
-        this.ErrorCache = new double[Length];
         this.Alpha = new double[Length];
         this.Optimized = new bool[Length];
+        ErrorCache = new double[Length];
+        LabelConvert = new sbyte[Length];
     }
 
+    public void SetLabel(string labelToIdentify)
+    {
+        for (int i = 0; i < SvmData.YLabels.Length; i++)
+        {
+            LabelConvert[i] = (sbyte)(SvmData.YLabels[i] == labelToIdentify ? 1 : -1);
+        }
+    }
+    public sbyte[] LabelConvert { get; }
     public double[][] XDataPoints => SvmData.XDataPoints;
 
-    public SvmData SvmData { get; set; }
+    public SvmData SvmData { get; }
 
     public int Length { get; }
 
-    public double[] Alpha { get; set; }
-    public bool[] Optimized { get; set; }
-//    public double[][] XDataPoints { get; init; }
-//    public double[] YLabel { get; init; }
-    public double[] ErrorCache { get; init; }
-
+    public double[] Alpha { get; }
+    public bool[] Optimized { get; }
+    
+    public double[] ErrorCache { get; } 
+    
     public void UpdateErrorCache(Func<int, double> errorCalculation)
     {
         for (int i = 0; i < ErrorCache.Length; i++)

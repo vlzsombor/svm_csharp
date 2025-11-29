@@ -11,8 +11,8 @@ public class BenchmarkTest
     [Benchmark]
     public async Task Main()
     {
-        SvmConfig s = SvmConfig.GetDefault(["0"], 0.5, ClassLibrary1.KernelType.Linear) with { MaxIter = 1000 };
-        Digits digits = new(1000, s);
+        SvmConfig s = SvmConfig.GetDefault(["0", "1"], 1.0/784, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+        Digits digits = new(10, s);
         await digits.Train(s);
         
     }

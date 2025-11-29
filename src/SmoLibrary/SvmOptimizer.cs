@@ -6,8 +6,6 @@ namespace ClassLibrary1;
 
 public class SvmOptimizer
 {
-//    private IEnumerable<SvmNumber> _dataPoints;
-
     public SvmConfig SvmConfig { get; }
     public string LabelToIdentify { get; }
     private readonly SvmNumberSoa _svmNumberSoa;
@@ -17,7 +15,6 @@ public class SvmOptimizer
         _svmNumberSoa = svmNumberSoa;
         SvmConfig = config;
         LabelToIdentify = labelToIdentify;
-
     }
 
     public SvmOptimizer()
@@ -25,15 +22,15 @@ public class SvmOptimizer
         
     }
     
-    public double B { get; set; }
+    public double B { get; private set; }
     public SvmNumberSoa SupportVectors => _svmNumberSoa;
 
     public readonly double Tolarance = 0.01;
 
     public void Fit()
     {
-//        SupportVectors = _svmNumberSoa;
         _svmNumberSoa.UpdateErrorCache(Error);
+        _svmNumberSoa.SetLabel(LabelToIdentify);
         for (int itrationIndex = 0; itrationIndex < SvmConfig.MaxIter; itrationIndex++)
         {
             int? h2 = Heuristic2();
@@ -62,10 +59,7 @@ public class SvmOptimizer
 
             _svmNumberSoa.ErrorCache[heuristic1] = Error(heuristic1);
             _svmNumberSoa.ErrorCache[heuristic2] = Error(heuristic2);
-//            Logger.Log($"B: {B}");
         }
-        var ints = _svmNumberSoa.Alpha.Where((x, i)=>x > 0).Select((x,i) => i).ToArray();
-        //SupportVectors = _svmNumberSoa.SetSupportVector();
         Logger.Log("B: " + this.B + " Supportvectors: " + this.SupportVectors.Alpha.Count(x=>x > 0));
         Logger.Log("svm trained");
     }
@@ -73,7 +67,7 @@ public class SvmOptimizer
     public int Heuristic1(int alpha1Index)
     {
         //alpha1 ??= Heuristic2();
-        var nonBound = NonBoundExamples().ToArray();
+        var nonBound = NonBoundExamples();
 
         double alphaError = _svmNumberSoa.ErrorCache[alpha1Index];
         if (nonBound.Any())
@@ -99,7 +93,8 @@ public class SvmOptimizer
         }
 
 //        return Doubles2(x=>(Math.Abs(_dataPoints.ErrorCache[x] - alphaError), x)).OrderByDescending(x=>x.Item1).First().x;
-        return maxIndex; }
+        return maxIndex; 
+    }
 
     public double CalculateEta(int index1, int index2)
     {
@@ -114,7 +109,7 @@ public class SvmOptimizer
     {
         Func<double> lbF = () => _svmNumberSoa.Alpha[alpha1Index] + _svmNumberSoa.Alpha[alpha2Index] - SvmConfig.C;
         Func<double> ubF = () => _svmNumberSoa.Alpha[alpha1Index] + _svmNumberSoa.Alpha[alpha2Index];
-        if (Math.Abs(ConvertLabel(alpha1Index) - ConvertLabel(alpha2Index)) > Tolarance)
+        if (Math.Abs(_svmNumberSoa.LabelConvert[alpha1Index] - _svmNumberSoa.LabelConvert[alpha2Index]) > Tolarance)
         {
             lbF = () => _svmNumberSoa.Alpha[alpha2Index] - _svmNumberSoa.Alpha[alpha1Index];
             ubF = () => SvmConfig.C + _svmNumberSoa.Alpha[alpha2Index] - _svmNumberSoa.Alpha[alpha1Index];
@@ -181,18 +176,18 @@ public class SvmOptimizer
 
     public double Error(int i)
     {
-        var error = Predict(_svmNumberSoa.SvmData.XDataPoints[i]) - ConvertLabel(i);
+        var error = Predict(_svmNumberSoa.SvmData.XDataPoints[i]) - _svmNumberSoa.LabelConvert[i];
         return error;
     }
 
     public double NewAlpha1(int index1, int index2, double alphanew)
     {
-        return _svmNumberSoa.Alpha[index1] + ConvertLabel(index1) * ConvertLabel(index2) * (_svmNumberSoa.Alpha[index2] - alphanew);
+        return _svmNumberSoa.Alpha[index1] + _svmNumberSoa.LabelConvert[index1] * _svmNumberSoa.LabelConvert[index2] * (_svmNumberSoa.Alpha[index2] - alphanew);
     }
 
     public double NewAlpha2(int index, double e1, double e2, double eta, double H, double L)
     {
-        double alpha2New = _svmNumberSoa.Alpha[index] + ConvertLabel(index) * (e1 - e2) / eta;
+        double alpha2New = _svmNumberSoa.Alpha[index] + _svmNumberSoa.LabelConvert[index] * (e1 - e2) / eta;
         alpha2New = Math.Min(alpha2New, H);
         return Math.Max(alpha2New, L);
     }
@@ -200,7 +195,7 @@ public class SvmOptimizer
     public bool Check_KKT(int i)
     {
         double score = Predict(_svmNumberSoa.SvmData.XDataPoints[i]);
-        double ro = -ConvertLabel(i) * score - 1;
+        double ro = -_svmNumberSoa.LabelConvert[i] * score - 1;
         bool cond1 = (_svmNumberSoa.Alpha[i] < SvmConfig.C) && (ro < -SvmConfig.KktThr);
         bool cond2 = (_svmNumberSoa.Alpha[i] > 0) && (ro > SvmConfig.KktThr);
         return !(cond1 || cond2);
@@ -220,17 +215,15 @@ public class SvmOptimizer
     }*/
     public double Predict(double[] inputSvmNumber)
     {
-            double sum = B;
-        for (int i = 0; i < SupportVectors.Length; i++)
-        {
-            sum += ConvertLabel(i) * SupportVectors.Alpha[i] * Kernel(SupportVectors.XDataPoints[i], inputSvmNumber);
-        }
-        return sum;
+        return B + Enumerable.Range(0, SupportVectors.Length) 
+            .Select( i => _svmNumberSoa.LabelConvert[i] * SupportVectors.Alpha[i] * Kernel(SupportVectors.XDataPoints[i], inputSvmNumber))
+            .AsParallel()
+            .Sum();       
     }
 
-    public sbyte ConvertLabel(int i)
+    public sbyte ConvertLabel2(int i)
     {
-        return (sbyte)(Runner.LabelFilter(SupportVectors.SvmData.YLabels[i], SvmConfig) == LabelToIdentify ? 1 : -1);
+        return (sbyte)(SupportVectors.SvmData.YLabels[i] == LabelToIdentify ? 1 : -1);
     }
 
     public double Kernel(double[] xj, double[] x)
@@ -271,12 +264,12 @@ public class SvmOptimizer
     public double CalculateB(int index1, int index2, double alphaNew1, double alphaNew2, double e1, double e2)
     {
         double b1 = B - e1 -
-                    ConvertLabel(index1) * (alphaNew1 - _svmNumberSoa.Alpha[index1]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index1])
-                    - ConvertLabel(index2) * (alphaNew2 - _svmNumberSoa.Alpha[index2]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index2]);
+                    _svmNumberSoa.LabelConvert[index1] * (alphaNew1 - _svmNumberSoa.Alpha[index1]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index1])
+                    - _svmNumberSoa.LabelConvert[index2] * (alphaNew2 - _svmNumberSoa.Alpha[index2]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index2]);
 
         double b2 = B - e2 -
-                    ConvertLabel(index1) * (alphaNew1 - _svmNumberSoa.Alpha[index1]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index2])
-                    - ConvertLabel(index2) * (alphaNew2 - _svmNumberSoa.Alpha[index2]) * Kernel(_svmNumberSoa.XDataPoints[index2], _svmNumberSoa.XDataPoints[index2]);
+                    _svmNumberSoa.LabelConvert[index1] * (alphaNew1 - _svmNumberSoa.Alpha[index1]) * Kernel(_svmNumberSoa.XDataPoints[index1], _svmNumberSoa.XDataPoints[index2])
+                    - _svmNumberSoa.LabelConvert[index2] * (alphaNew2 - _svmNumberSoa.Alpha[index2]) * Kernel(_svmNumberSoa.XDataPoints[index2], _svmNumberSoa.XDataPoints[index2]);
 
         if (0 < alphaNew1 && alphaNew1 < SvmConfig.C) return b1;
 

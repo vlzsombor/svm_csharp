@@ -53,6 +53,9 @@
         <None Update="archive\moons-test.csv">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="archive\breast\breast-cancer.csv">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

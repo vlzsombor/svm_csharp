@@ -17,14 +17,23 @@ public class Digits
     public async Task TrainAndAccuracy(SvmConfig config)
     {
         Logger.Log($"entered {nameof(TrainAndAccuracy)}");
-        var r = await Runner.DoLogic(FilePath, Func, config);
+        var oneVsAllClassifier = await Runner.DoLogic(FilePath, Func, config);
         Logger.Log($"End fitting {nameof(TrainAndAccuracy)}");
         Logger.Log($"start accuracy measurement  {nameof(TrainAndAccuracy)}");
         
-        await Runner.LoadSvmAccuracy(r, TestFilePath, Func);
+        await Runner.LoadSvmAccuracy(oneVsAllClassifier, TestFilePath, Func);
         Logger.Log($"end accuracy measurement  {nameof(TrainAndAccuracy)}");
     }
 
+    public async Task TrainAndAccuracySingleSvm(SvmConfig config)
+    {
+        Logger.Log($"entered {nameof(TrainAndAccuracy)}");
+        var r = await Runner.DoLogicSimple(FilePath, Func, config);
+        Logger.Log($"End fitting {nameof(TrainAndAccuracy)}");
+        Logger.Log($"start accuracy measurement  {nameof(TrainAndAccuracy)}");
+        await Runner.LoadSvmAccuracySimple(r, TestFilePath, Func);
+        Logger.Log($"end accuracy measurement  {nameof(TrainAndAccuracy)}");
+    }
     public async Task<OneVsAllClassifier> Train(SvmConfig config)
     {
         Logger.Log($"entered {nameof(Train)}");
