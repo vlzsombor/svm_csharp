@@ -9,16 +9,18 @@ public class Program
     public static readonly List<string> all = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
     public static async Task Main()
     {
-        var summary = BenchmarkRunner.Run<BenchmarkTest>();
-        return;
+        Console.WriteLine("SOA");
+//        var summary = BenchmarkRunner.Run<BenchmarkTest>();
+//        return;
         var dateTimeNow = DateTime.Now;
         var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
-        SvmConfig s = SvmConfig.GetDefault(["0","1"], 1.0/784, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+        SvmConfig s = SvmConfig.GetDefault(all.ToArray(), 1.0/784, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
         
-        Digits digits2 = new(200, s);
+        Digits digits2 = new(0, s);
         await digits2.TrainAndAccuracy(s);
-//        await digits2.MainLoad(@"C:\git\hide\personal\csharp\SVM_C_Sharp\src\ConsoleApp\bin\Debug\net8.0\25-11-25\OneVsAllClassifier-3000-LabelsToIdentify-2-7_1286.json");
+//        await digits2.MainLoad(@"C:\git\hide\personal\csharp\SVM_C_Sharp\src\ConsoleApp\bin\Debug\net8.0\25-11-30\OneVsAllClassifier-1000-LabelsToIdentify-1-0_1552.json");
+        
         sw.Stop();
         var dateTimeNew = DateTime.Now;
         var diff = dateTimeNow - dateTimeNew;

@@ -111,30 +111,37 @@ public class Digits
             {
                 dictionary.Add(li, 0);
             }
-            string[] labels = new string[dictionary.Count * size];
-            double[][] dataPoints = new double[dictionary.Count * size][];
+            
+            string[] labels = new string[s.Length];
+            double[][] dataPoints = new double[s.Length][];
+            if (size != 0)
+            {
+                labels = new string[dictionary.Count * size];
+                dataPoints = new double[dictionary.Count * size][];
+            }
             int newIndex = 0;
             for (int i = 0; i < s.Length; i++)
             {
                 var str = s[i];
                 var str2 = str.Split(',');
-                
-                if (labelsToIdentify.Contains(str2[0]))
-                {
-                    var r = dictionary[str2[0]]++;
+                if(size != 0){
+                    if (labelsToIdentify.Contains(str2[0]))
+                    {
+                        var r = dictionary[str2[0]]++;
 
-                    if (r >= size)
-                    {
-                        continue;
+                        if (r >= size)
+                        {
+                            continue;
+                        }
                     }
-                }
-                else
-                {
-                    var r= dictionary["-1"]++;
-                    
-                    if (r >= size)
+                    else
                     {
-                        continue;
+                        var r = dictionary["-1"]++;
+
+                        if (r >= size)
+                        {
+                            continue;
+                        }
                     }
                 }
 

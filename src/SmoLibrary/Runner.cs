@@ -34,7 +34,8 @@ public class Runner(int size, SvmConfig svmConfig)
         OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig) ?? throw new InvalidOperationException();
         IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1); // Lazily read lines
         var result = func(lines.ToArray(), oneVsAllClassifier.Smos.Select(x => x.LabelToIdentify).ToArray(), 10_000);
-        Accuracy(oneVsAllClassifier, result);
+        oneVsAllClassifier.Smos.ForEach(x=>x.SupportVectors.SetLabel(x.LabelToIdentify));
+        await Accuracy(oneVsAllClassifier, result);
     }
 
     public async Task LoadSvmAccuracy(OneVsAllClassifier oneVsAllClassifier, string testDataSetPath, Func<string[],string[], int, DataLabelSoa> func)
@@ -44,8 +45,7 @@ public class Runner(int size, SvmConfig svmConfig)
         Array.Copy(allLines, 1, dataLines, 0, dataLines.Length);        
         var result = func(dataLines, svmConfig.LabelsToIdentify.ToArray(), (int)(size*0.8));
         
-        
-        Accuracy(oneVsAllClassifier, result);
+        await Accuracy(oneVsAllClassifier, result);
     }
     
     public async Task LoadSvmAccuracySimple(SvmOptimizer optimizer, string testDataSetPath, Func<string[],string[], int, DataLabelSoa> func)
@@ -54,9 +54,9 @@ public class Runner(int size, SvmConfig svmConfig)
         string[] dataLines = new string[allLines.Length - 1];
         Array.Copy(allLines, 1, dataLines, 0, dataLines.Length);        
         var result = func(dataLines, svmConfig.LabelsToIdentify.ToArray(), (int)((size * 2) * 0.8));
-        AccuracySimple(optimizer, result);
+        await AccuracySimple(optimizer, result);
     }
-    public double AccuracySimple(SvmOptimizer optimizer, DataLabelSoa dataLabels)
+    public async Task<double> AccuracySimple(SvmOptimizer optimizer, DataLabelSoa dataLabels)
     {
         int truePositive = 0;
         int trueNegative = 0;
@@ -64,13 +64,15 @@ public class Runner(int size, SvmConfig svmConfig)
         int falseNegative = 0;
         int correctCount = 0;
         int allCount = 0;
+        Thread.Sleep(1000);
         for (int i = 0; i < dataLabels.Label.Length; i++)
         {
             if (dataLabels.Points[i] == null)
             {
                 continue;
             }
-            var predictedLabel = optimizer.Predict(dataLabels.Points[i]) > 0 ? optimizer.SvmConfig.LabelsToIdentify.First() : "-1";
+            
+            var predictedLabel = optimizer.Predict(dataLabels.Points[i]) > 0 ? optimizer.LabelToIdentify : "-1";
             var realLabel = LabelFilter(dataLabels.Label[i]);
 
             if (predictedLabel == realLabel)
@@ -129,7 +131,7 @@ public class Runner(int size, SvmConfig svmConfig)
         return result;
     }
     
-    public double Accuracy(OneVsAllClassifier oneVsAllClassifier, DataLabelSoa dataLabels)
+    public async Task<double> Accuracy(OneVsAllClassifier oneVsAllClassifier, DataLabelSoa dataLabels)
     {
         int truePositive = 0;
         int trueNegative = 0;
@@ -137,6 +139,8 @@ public class Runner(int size, SvmConfig svmConfig)
         int falseNegative = 0;
         int correctCount = 0;
         int allCount = 0;
+        await Task.Delay(5000);
+        Thread.Sleep(1000);
         for (int i = 0; i < dataLabels.Label.Length; i++)
         {
             if (dataLabels.Points[i] == null)
