@@ -34,6 +34,8 @@ public class Runner(int size, SvmConfig svmConfig)
         OneVsAllClassifier oneVsAllClassifier = JsonSerializer.Deserialize<OneVsAllClassifier>(jsonConfig) ?? throw new InvalidOperationException();
         IEnumerable<string> lines = File.ReadLines(testDataSetPath).Skip(1); // Lazily read lines
         var result = func(lines.ToArray(), oneVsAllClassifier.Smos.Select(x => x.LabelToIdentify).ToArray(), 10_000);
+        oneVsAllClassifier.Smos =
+            oneVsAllClassifier.Smos.Where(x => svmConfig.LabelsToIdentify.Contains(x.LabelToIdentify)).ToList();
         oneVsAllClassifier.Smos.ForEach(x=>x.SupportVectors.SetLabel(x.LabelToIdentify));
         await Accuracy(oneVsAllClassifier, result);
     }
@@ -139,8 +141,6 @@ public class Runner(int size, SvmConfig svmConfig)
         int falseNegative = 0;
         int correctCount = 0;
         int allCount = 0;
-        await Task.Delay(5000);
-        Thread.Sleep(1000);
         for (int i = 0; i < dataLabels.Label.Length; i++)
         {
             if (dataLabels.Points[i] == null)
@@ -226,6 +226,8 @@ public class Runner(int size, SvmConfig svmConfig)
         var result = func(dataLines, svmConfig.LabelsToIdentify, size);
         Logger.Log($"The result size: {result.Label.Length}");
         Logger.Log($"The file path for result: {fileName}");
+        Logger.Log($"Max iter: {config.MaxIter}");
+        
         OneVsAllClassifier oneVsAllClassifier = new(result, config);
         Logger.Log($"{oneVsAllClassifier.Smos.Count}, {string.Join(" ",oneVsAllClassifier.Smos.Select(x=>x.LabelToIdentify).ToList())}");
         Logger.Log("Fit start:");

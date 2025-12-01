@@ -15,16 +15,13 @@ public class Program
         var dateTimeNow = DateTime.Now;
         var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
-        SvmConfig s = SvmConfig.GetDefault(all.ToArray(), 1.0/784, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 1000 };
+        SvmConfig s = SvmConfig.GetDefault(["0", "1", "2"], 0.05, 5, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 2000 };
         
-        Digits digits2 = new(0, s);
-        await digits2.TrainAndAccuracy(s);
-//        await digits2.MainLoad(@"C:\git\hide\personal\csharp\SVM_C_Sharp\src\ConsoleApp\bin\Debug\net8.0\25-11-30\OneVsAllClassifier-1000-LabelsToIdentify-1-0_1552.json");
-        
+        Digits digits2 = new(600, s);
+//        await digits2.TrainAndAccuracy(s);
+        await digits2.MainLoad(@"mnist_data/C_5_gamma_0_05_OneVsAllClassifier-0-LabelsToIdentify-0-1-2-3-4-5-6-7-8-9_5077.json");
         sw.Stop();
-        var dateTimeNew = DateTime.Now;
-        var diff = dateTimeNow - dateTimeNew;
-        Console.WriteLine("Time difference" + diff.TotalSeconds);
+        Console.WriteLine("Time difference" + sw.Elapsed.TotalMinutes);
         return;
         var svmTargets = Environment.GetEnvironmentVariable("svm_targets") ?? "0";
         var targets = svmTargets.Split('-');
@@ -34,7 +31,7 @@ public class Program
         var success = Int32.TryParse(svmSize, out int size);
         if (!success) size = int.MaxValue;
         Logger.Log($"Params: {size} {string.Join(" ", targets)}");
-        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(targets,1.0/784, ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(targets, 1.0/784, ClassLibrary1.KernelType.Linear);
+        SvmConfig config = kernelType == "rbf" ? SvmConfig.GetDefault(targets,1.0/784, 10, ClassLibrary1.KernelType.Gaussian) : SvmConfig.GetDefault(targets, 1.0/784,1.0, ClassLibrary1.KernelType.Linear);
         
         Digits digits = new(size, config);
         Logger.Log("started");

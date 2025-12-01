@@ -55,6 +55,10 @@ public class SvmOptimizer
 
             SupportVectors.ErrorCache[heuristic1] = Error(heuristic1);
             SupportVectors.ErrorCache[heuristic2] = Error(heuristic2);
+            if (itrationIndex % 1000 == 0)
+            {
+                Logger.Log(LabelToIdentify + " " + itrationIndex);
+            }
         }
         SupportVectors = SvmNumberSoa.Clone(SupportVectors, SupportVectors.Alpha.Select((x,i)=> (x,i)).Where(x=>x.x>0).Select(x=> x.i).ToArray());
         SupportVectors.SetLabel(LabelToIdentify);

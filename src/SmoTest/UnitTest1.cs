@@ -85,7 +85,7 @@ public const string irisVirginica = "Iris-virginica";
     public async Task Iris()
     {
         var fileName = "archive/IrisTrain.csv";
-        var svmConfig = SvmConfig.GetDefault([irisSetosa, irisVirginica, irisVerisicolor], 0.5, KernelType.Gaussian);
+        var svmConfig = SvmConfig.GetDefault([irisSetosa, irisVirginica, irisVerisicolor], 0.5, 1,KernelType.Gaussian);
         Runner runner = new Runner(300, svmConfig);
         Func<string[], string[], int, DataLabelSoa> func = (lines, identify, size) =>
         {
@@ -112,7 +112,7 @@ public const string irisVirginica = "Iris-virginica";
     public async Task Moons()
     {
         var fileName = "archive/breast-cancer/breast-cancer.csv";
-        var svmConfig = SvmConfig.GetDefault(["1","0"], 0.5, KernelType.Gaussian);
+        var svmConfig = SvmConfig.GetDefault(["1","0"], 0.5, 1, KernelType.Gaussian);
         Runner runner = new Runner(300, svmConfig);
         Func<string[], string[], int, DataLabelSoa> func = (lines, identify, size) =>
         {
