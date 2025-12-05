@@ -1,0 +1,84 @@
+﻿<!doctype html>
+<html>
+<body>
+<button id="clearBtn">Clear</button>
+<button id="sendBtn">Send</button>
+<button id="getBtn">GetTest</button>
+<br><br>
+
+<canvas id="c1" width="28" height="28" style="border:1px solid black; filter: grayscale(1)"></canvas>
+<h6 id="time"></h6>
+<h3 id="result"></h3>
+<script>
+    const c1 = document.getElementById("c1");
+    const ctx1 = c1.getContext("2d", { willReadFrequently: true });
+
+    function resetCanvas() {
+        ctx1.fillStyle = "black";
+        ctx1.fillRect(0, 0, c1.width, c1.height);
+    }
+    resetCanvas();
+
+    let down = false;
+    c1.addEventListener("mousedown", () => { down = true; });
+    c1.addEventListener("mouseup",   () => { down = false; });
+    c1.addEventListener("mouseleave",() => { down = false; });
+
+    c1.addEventListener("mousemove", (e) => {
+        if (!down) return;
+        const r = c1.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+
+        ctx1.fillStyle = "white";
+        ctx1.fillRect(x, y, 2, 2);
+    });
+
+    // Buttons
+    document.getElementById("clearBtn").addEventListener("click", () => {
+        resetCanvas();
+    });
+
+    document.getElementById("getBtn").addEventListener("click", async () => {
+        const response = await fetch('/getTestData', {
+            method: 'GET'
+        });
+        
+        let result = await response.text();
+
+        var rows = result.split(',');
+
+        var imageData = ctx1.getImageData(0, 0, c1.width, c1.height)
+        var data = imageData.data;
+        let k = 0;
+        
+        for(var i = 0; i < data.length; i+=4) {
+            let v = rows[i/4];
+            let value = parseInt(v)
+            data[i] = value;
+            data[i+1] = value;
+            data[i+2] = value;
+            data[i+3] = 255;
+        }
+        ctx1.putImageData(imageData, 0, 0);
+    });
+    document.getElementById("sendBtn").addEventListener("click", async () => {
+        const img = ctx1.getImageData(0, 0, c1.width, c1.height);
+
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(img.data.toString())
+        });
+        const now = new Date();
+        const h = now.getHours();
+        const m = now.getMinutes().toString().padStart(2, "0");
+        const s = now.getSeconds().toString().padStart(2, "0");
+
+        document.getElementById("time").textContent = h + ":" + m + ":" + s;
+
+        document.getElementById('result').textContent = await response.text();
+    });
+</script>
+</body>
+</html>
