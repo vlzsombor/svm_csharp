@@ -72,13 +72,6 @@ async function sendRequest() {
         body: JSON.stringify(imageData.data.toString())
     });
     
-    
-    
-    
-    
-    
-    
-    
     const char = await response.text();
     document.getElementById('result').textContent = char;
 }
