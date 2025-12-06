@@ -8,9 +8,32 @@ namespace ClassLibrary1;
 public static class Static
 {
     
+    public static double InnerProductSimple(double[] a, double[] b)
+    {
+        double result = 0.0;
+        for (int i = 0; i < a.Length; i++)
+        {
+            result += a[i] * b[i];
+        }
+        return result;
+    }
+
+    public static double RbfKernel(this double[] x1, double[] x2, double gamma)
+    {
+//        return RbfSimd(x1, x2, gamma);
+        double squaredDistance = 0.0f;
+
+        for (int i = 0; i < x1.Length; i++)
+        {
+            double diff = x1[i] - x2[i];
+            squaredDistance += diff * diff;
+        }
+
+        return (double)Math.Exp(-gamma * squaredDistance);
+    }
     public static double InnerProduct(this double[] u, double[] v)
     {
-        
+        return InnerProductSimple(u, v);
         int length = u.Length;
         int simdLength = Vector<double>.Count;
         int i = 0;

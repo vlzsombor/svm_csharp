@@ -2,69 +2,58 @@
 
 public class OneVsAllClassifier
 {
-    public OneVsAllClassifier(IEnumerable<DataLabel> result, SvmConfig config)
+    public SvmConfig _config { get; set; }
+    public OneVsAllClassifier(DataLabelSoa result, SvmConfig config)
     {
-        List<string> labels = result.GroupBy(x => x.Label).Select(x => x.Key).Distinct().ToList();
-        Dictionary<string, List<SvmNumber>> list = [];
-        int i = 0;
-        foreach (var r in result)
+        _config = config;
+//        SvmData svmData = new(result.Points, result.Label);
+
+        Smos = [];
+        for (int i = 0; i < config.LabelsToIdentify.Length; i++)
         {
-            labels.ForEach(x =>
-            {
-                list.TryAdd(x, new List<SvmNumber>());
-                list[x].Add(new SvmNumber(i, r.Points, r.Label == x ? 1 : -1, 0));
-            });
-
-            i++;
+            
+            SvmData svmData = new(result.Points, result.Label);
+            string label = config.LabelsToIdentify[i];
+            SvmNumberSoa svmsoa = new(svmData);
+            Smos.Add(new SvmOptimizer(svmsoa, config, label));
         }
-
-        foreach (KeyValuePair<string, List<SvmNumber>> e in list) Smos.Add(e.Key, new SvmOptimizer(e.Value, config));
     }
 
     public OneVsAllClassifier()
     {
-        
     }
 
-    public Dictionary<string, SvmOptimizer> Smos { get; set; } = [];
+    public List<SvmOptimizer> Smos { get; set; }
 
-    public void fit()
+    public void Fit()
     {
-        Parallel.ForEach(Smos, item =>
-        { 
-            Logger.Log($"started fitting: {item.Key}");
-            item.Value.Fit();
+        Parallel.ForEach(Smos, smo =>
+        {
+            Logger.Log($"started fitting: {smo.LabelToIdentify}");
+            smo.Fit();
         });
+        foreach (var smo in Smos)
+        {
+        }
     }
 
     public string Predict(double[] doubles)
     {
-//        
-//        var r=  Smos.First(x=>x.Key == "1").Value.Predict2(doubles);
-////            .Where(x=>x.Value.IsFitted)
-//
-//        if (r > 0)
-//        {
-//            return "1";
-//        }
-//
-//        return "-1";
-        
-        return Smos
-//            .Where(x=>x.Value.IsFitted)
-            .Where(x=>x.Value.SupportVectors != null)
-            .OrderByDescending(x => x.Value.Predict2(doubles)).First().Key;
-    }
+        IEnumerable<(string LabelToIdentify, double)> aaa = Smos
+            .Select(x => (x.LabelToIdentify, x.Predict(doubles)));
 
-    public IEnumerable<string> Predict(IEnumerable<double[]> svmNumbers)
-    {
-        return svmNumbers.Select(number =>
-            Smos.OrderByDescending(y => y.Value.Predict2(number))
-                .First().Key);
-    }
+        (string LabelToIdentify, double) r2 = aaa.OrderByDescending(x => x.Item2).FirstOrDefault(x => x.Item2 > 0);
+        return r2.LabelToIdentify ?? "-1";
 
-    public IEnumerable<string> Predict(IEnumerable<SvmNumber> svmNumbers)
-    {
-        return Predict(svmNumbers.Select(x => x.XDataPoints));
+        if (Smos.Count == 1)
+        {
+            double r = Smos.Single().Predict(doubles);
+            return r > 1 ? "1" : "-1";
+        }
+
+        SvmOptimizer[] result = Smos
+            .Where(x => x.SupportVectors != null)
+            .OrderByDescending(x => x.Predict(doubles)).ToArray();
+        return result.First().LabelToIdentify;
     }
 }

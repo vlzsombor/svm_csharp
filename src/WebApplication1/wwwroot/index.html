@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST Digit Viewer</title>
+    <style>
+        body {
+            margin: 20px;
+            font-family: monospace;
+        }
+        canvas {
+            border: 1px solid #000;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #original {
+            width: 28px;
+            height: 28px;
+        }
+        #scaled {
+            width: 280px;
+            height: 280px;
+        }
+        input[type="range"] {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+
+<button id="clearBtn">Clear</button>
+<button id="sendBtn">Send</button>
+<button id="getBtn">GetTest</button>
+
+    <h3>Original (28×28)</h3>
+    <canvas id="original" width="28" height="28"></canvas>
+    
+    <h3>Scaled</h3>
+    <canvas id="scaled" width="28" height="28"></canvas>
+    <br>
+    <label>ScaleValue: <span id="scaleValue">10</span>x</label>
+    <input type="range" id="scaleSlider" min="1" max="20" value="10">
+<h6 id="time"></h6>
+
+<h1 id="result" style="font-size: 50px">Your Text Here</h1>
+
+<script>
+        const orig = document.getElementById('original');
+        const scaled = document.getElementById('scaled');
+        const ctxOrig = orig.getContext('2d');
+        const ctxScaled = scaled.getContext('2d');
+        const slider = document.getElementById('scaleSlider');
+        const scaleValue = document.getElementById('scaleValue');
+        const ctx1 = ctxOrig;
+        const c1 = orig;
+        ctxOrig.lineCap = 'round'
+        ctxOrig.lineJoin = 'round'
+        ctxScaled.lineCap = 'round'
+        ctxScaled.lineJoin = 'round'
+        function drawRandomDigit() {
+            const imgData = ctxOrig.createImageData(28, 28);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                const val = Math.random() > 0.7 ? 255 : 0;
+                imgData.data[i] = val;
+                imgData.data[i+1] = val;
+                imgData.data[i+2] = val;
+                imgData.data[i+3] = 255;
+            }
+            ctxOrig.putImageData(imgData, 0, 0);
+            updateScaled();
+        }
+        
+        function updateScaled() {
+            const scale = parseInt(slider.value);
+            scaleValue.textContent = scale;
+            scaled.style.width = (28 * scale) + 'px';
+            scaled.style.height = (28 * scale) + 'px';
+            ctxScaled.clearRect(0, 0, 28, 28);
+            ctxScaled.drawImage(orig, 0, 0);
+        }
+        
+        slider.addEventListener('input', updateScaled);
+        
+        drawRandomDigit();
+
+        function resetCanvas() {
+            ctxOrig.fillStyle = "black";
+            ctxOrig.fillRect(0, 0, c1.width, c1.height);
+            ctxScaled.fillStyle = "black";
+            ctxScaled.fillRect(0, 0, scaled.width, scaled.height);
+        }
+        resetCanvas();
+        function drawBrush(ctx, x, y, radius) {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        let down = false;
+        orig.addEventListener("mousedown", () => { down = true; });
+        orig.addEventListener("mouseup",   () => { down = false; });
+        orig.addEventListener("mouseleave",() => { down = false; });
+        orig.addEventListener("mousemove", (e) => {
+            if (!down) return;
+            const r = c1.getBoundingClientRect();
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+
+            ctxOrig.fillStyle = "white";
+            drawBrush(ctxOrig, x, y, 1.2)
+            updateScaled()
+        });
+        scaled.addEventListener("mousedown", () => { down = true; });
+        scaled.addEventListener("mouseup",   () => { down = false; });
+        scaled.addEventListener("mouseleave",() => { down = false; });
+        scaled.addEventListener("mousemove", (e) => {
+            if (!down) return;
+            const r = scaled.getBoundingClientRect();
+            const scale = parseInt(slider.value);
+            const x = Math.floor((e.clientX - r.left) / scale);
+            const y = Math.floor((e.clientY - r.top) / scale);
+
+            ctxOrig.fillStyle = "white";
+            drawBrush(ctxOrig, x, y, 1.2)
+            updateScaled();
+        });
+        // Buttons
+        document.getElementById("clearBtn").addEventListener("click", () => {
+            resetCanvas();
+        });
+
+        document.getElementById("getBtn").addEventListener("click", async () => {
+            const response = await fetch('/getTestData', {
+                method: 'GET'
+            });
+
+            let result = await response.text();
+
+            var rows = result.split(',');
+
+            var imageData = ctx1.getImageData(0, 0, c1.width, c1.height)
+            var data = imageData.data;
+            let k = 0;
+
+            for(var i = 0; i < data.length; i+=4) {
+                let v = rows[i/4];
+                let value = parseInt(v)
+                data[i] = value;
+                data[i+1] = value;
+                data[i+2] = value;
+                data[i+3] = 255;
+            }
+            
+            ctx1.putImageData(imageData, 0, 0);
+            updateScaled()
+        });
+        document.getElementById("sendBtn").addEventListener("click", async () => {
+            const img = ctx1.getImageData(0, 0, c1.width, c1.height);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(img.data.toString())
+            });
+            const now = new Date();
+            const h = now.getHours();
+            const m = now.getMinutes().toString().padStart(2, "0");
+            const s = now.getSeconds().toString().padStart(2, "0");
+
+            document.getElementById("time").textContent = h + ":" + m + ":" + s;
+
+            document.getElementById('result').textContent = await response.text();
+        });
+        
+    </script>
+</body>
+</html>

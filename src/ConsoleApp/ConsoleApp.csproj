@@ -32,6 +32,15 @@
         <None Update="mnist_data\OneVsAllClassifier-2147483647-labelsToIdentify-0-1-2-3-4-5-6-7-8-9_9058.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="mnist_data\mytrainData.csv">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="mnist_data\OneVsAllClassifier-0-LabelsToIdentify-0-1-2-3-4-5-6-7-8-9_6844.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="mnist_data\C_5_gamma_0_05_OneVsAllClassifier-0-LabelsToIdentify-0-1-2-3-4-5-6-7-8-9_5077.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
