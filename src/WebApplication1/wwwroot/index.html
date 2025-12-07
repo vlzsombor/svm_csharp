@@ -31,8 +31,8 @@
 
 
 <button id="clearBtn">Clear</button>
-<button id="sendBtn">Send</button>
-<button id="getBtn">GetTest</button>
+<button id="sendBtn">Predict</button>
+<button id="getBtn">Get a new image from the test set</button>
 
     <h3>Original (28×28)</h3>
     <canvas id="original" width="28" height="28"></canvas>
@@ -42,9 +42,11 @@
     <br>
     <label>ScaleValue: <span id="scaleValue">10</span>x</label>
     <input type="range" id="scaleSlider" min="1" max="20" value="10">
+<h6>Timestamp of the prediction:</h6>
 <h6 id="time"></h6>
 
-<h1 id="result" style="font-size: 50px">Your Text Here</h1>
+<label for="time">Predicted digit:</label>
+<h1 id="result" >Predicted result</h1>
 
 <script>
         const orig = document.getElementById('original');
@@ -114,7 +116,7 @@
             const y = e.clientY - r.top;
 
             ctxOrig.fillStyle = "white";
-            drawBrush(ctxOrig, x, y, 1.2)
+            drawBrush(ctxOrig, x, y, 1.5)
             updateScaled()
         });
         scaled.addEventListener("mousedown", () => { down = true; });
@@ -128,7 +130,7 @@
             const y = Math.floor((e.clientY - r.top) / scale);
 
             ctxOrig.fillStyle = "white";
-            drawBrush(ctxOrig, x, y, 1.2)
+            drawBrush(ctxOrig, x, y, 1.5)
             updateScaled();
         });
         // Buttons
@@ -175,10 +177,14 @@
             const s = now.getSeconds().toString().padStart(2, "0");
 
             document.getElementById("time").textContent = h + ":" + m + ":" + s;
-
-            document.getElementById('result').textContent = await response.text();
+            
+            const res = await response.text();
+            if(res === '-1'){
+                document.getElementById('result').textContent = "Unknown";
+            }else{
+                document.getElementById('result').textContent = res;
+            }
         });
-        
     </script>
 </body>
 </html>

@@ -77,9 +77,9 @@ public class Tests
     }
 
     */
-public const string irisSetosa = "Iris-setos";
-public const string irisVerisicolor = "Iris-versicolor";
-public const string irisVirginica = "Iris-virginica";
+    public const string irisSetosa = "Iris-setos";
+    public const string irisVerisicolor = "Iris-versicolor";
+    public const string irisVirginica = "Iris-virginica";
     
     [Test]
     public async Task Iris()

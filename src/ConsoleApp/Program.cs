@@ -15,7 +15,7 @@ public class Program
         var dateTimeNow = DateTime.Now;
         var sw = Stopwatch.StartNew();
         BenchmarkTest benchmarkTest = new BenchmarkTest();
-        SvmConfig s = SvmConfig.GetDefault(["0", "1", "2"], 0.05, 5, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 2000 };
+        SvmConfig s = SvmConfig.GetDefault(all.ToArray(), 0.05, 5, ClassLibrary1.KernelType.Gaussian) with { MaxIter = 2000 };
         
         Digits digits2 = new(600, s);
 //        await digits2.TrainAndAccuracy(s);
